@@ -18,6 +18,7 @@ import {
   SchemaName
 } from '../Schema';
 import {ActionSchema} from './Action';
+import {isAlive} from 'mobx-state-tree';
 
 /**
  * Drawer 抽出式弹框。
@@ -172,7 +173,7 @@ export default class Drawer extends React.Component<DrawerProps> {
     this.bindResize = this.bindResize.bind(this);
     this.removeResize = this.removeResize.bind(this);
     this.handleEntered = this.handleEntered.bind(this);
-    this.handleExisted = this.handleExisted.bind(this);
+    this.handleExited = this.handleExited.bind(this);
     this.handleFormInit = this.handleFormInit.bind(this);
     this.handleFormChange = this.handleFormChange.bind(this);
     this.handleFormSaved = this.handleFormSaved.bind(this);
@@ -211,7 +212,7 @@ export default class Drawer extends React.Component<DrawerProps> {
     ret.push({
       type: 'button',
       actionType: 'close',
-      label: __('cancle')
+      label: __('cancel')
     });
 
     if (confirm) {
@@ -348,10 +349,15 @@ export default class Drawer extends React.Component<DrawerProps> {
     }
   }
 
-  handleExisted() {
-    const store = this.props.store;
-    store.reset();
-    store.setEntered(false);
+  handleExited() {
+    const {lazySchema, store} = this.props;
+    if (isAlive(store)) {
+      store.reset();
+      store.setEntered(false);
+      if (typeof lazySchema === 'function') {
+        store.setSchema('');
+      }
+    }
   }
 
   @autobind
@@ -554,7 +560,7 @@ export default class Drawer extends React.Component<DrawerProps> {
         position={position}
         overlay={overlay}
         onEntered={this.handleEntered}
-        onExisted={this.handleExisted}
+        onExisted={this.handleExited}
         closeOnEsc={closeOnEsc}
         closeOnOutside={
           !store.drawerOpen && !store.dialogOpen && closeOnOutside

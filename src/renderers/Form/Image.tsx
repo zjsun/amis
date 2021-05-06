@@ -1162,7 +1162,7 @@ export default class ImageControl extends React.Component<
               <a
                 className={cx('ImageControl-cropCancel')}
                 onClick={this.cancelCrop}
-                data-tooltip={__('cancle')}
+                data-tooltip={__('cancel')}
                 data-position="left"
               >
                 <Icon icon="close" className="icon" />
@@ -1199,7 +1199,7 @@ export default class ImageControl extends React.Component<
                   onClick: preventEvent,
                   onPaste: this.handlePaste,
                   className: cx('ImageControl-dropzone', {
-                    disabled,
+                    'is-disabled': disabled,
                     'is-empty': !files.length,
                     'is-active': isDragActive
                   })
