@@ -42,8 +42,9 @@
   &.is-disabled,
   &:disabled {
     opacity: var(--Button-onDisabled-opacity);
+    filter: grayscale(100%);
     box-shadow: none;
-    pointer-events: none;
+    cursor: not-allowed;
   }
 
   &:not(:disabled):not(.is-disabled) {
@@ -330,13 +331,4 @@ input[type='button'] {
     margin-left: var(--gap-xs);
     margin-top: var(--gap-xs);
   }
-
-  > .#{$ns}Button--disabled-wrap > .#{$ns}Button {
-    margin-left: var(--gap-xs);
-    margin-top: var(--gap-xs);
-  }
-}
-
-.#{$ns}Button--disabled-wrap {
-  display: inline-block !important;
 }

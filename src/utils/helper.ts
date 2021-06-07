@@ -1282,8 +1282,14 @@ export function qsstringify(
   options: any = {
     arrayFormat: 'indices',
     encodeValuesOnly: true
-  }
+  },
+  keepEmptyArray?: boolean
 ) {
+  // qs会保留空字符串。fix: Combo模式的空数组，无法清空。改为存为空字符串；只转换一层
+  keepEmptyArray &&
+    Object.keys(data).forEach((key: any) => {
+      Array.isArray(data[key]) && !data[key].length && (data[key] = '');
+    });
   return qs.stringify(data, options);
 }
 
@@ -1356,7 +1362,12 @@ export function chainEvents(props: any, schema: any) {
       typeof schema[key] === 'function' &&
       schema[key] !== props[key]
     ) {
-      ret[key] = chainFunctions(schema[key], props[key]);
+      // 表单项里面的 onChange 很特殊，这个不要处理。
+      if (props.formStore && key === 'onChange') {
+        ret[key] = props[key];
+      } else {
+        ret[key] = chainFunctions(schema[key], props[key]);
+      }
     } else {
       ret[key] = props[key];
     }

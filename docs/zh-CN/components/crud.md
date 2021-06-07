@@ -117,14 +117,14 @@ CRUD，即增删改查组件，主要用来展现数据列表，并支持各类�
             "body": {
                 "type": "form",
                 "api": "post:/api/sample",
-                "controls": [
+                "body": [
                     {
-                        "type": "text",
+                        "type": "input-text",
                         "name": "engine",
                         "label": "Engine"
                     },
                     {
-                        "type": "text",
+                        "type": "input-text",
                         "name": "browser",
                         "label": "Browser"
                     }
@@ -244,14 +244,14 @@ CRUD，即增删改查组件，主要用来展现数据列表，并支持各类�
                             "type": "form",
                             "initApi": "/api/sample/${id}",
                             "api": "post:/api/sample/${id}",
-                            "controls": [
+                            "body": [
                                 {
-                                    "type": "text",
+                                    "type": "input-text",
                                     "name": "engine",
                                     "label": "Engine"
                                 },
                                 {
-                                    "type": "text",
+                                    "type": "input-text",
                                     "name": "browser",
                                     "label": "Browser"
                                 }
@@ -335,7 +335,7 @@ List 模式支持 [List](./list) 中的所有功能。
         "title": "编辑能力（权限）",
         "body": {
           "type": "form",
-          "controls": [
+          "body": [
           {
             "type": "hidden",
             "name": "id"
@@ -343,7 +343,7 @@ List 模式支持 [List](./list) 中的所有功能。
           {
             "name": "name",
             "label": "权限名称",
-            "type": "text",
+            "type": "input-text",
             "disabled": true
           },
           {
@@ -411,7 +411,7 @@ Cards 模式支持 [Cards](./cards) 中的所有功能。
             "tabs": [
               {
                 "title": "基本信息",
-                "controls": [
+                "body": [
                   {
                     "type": "hidden",
                     "name": "id"
@@ -420,7 +420,7 @@ Cards 模式支持 [Cards](./cards) 中的所有功能。
                     "name": "name",
                     "label": "帐号",
                     "disabled": true,
-                    "type": "text"
+                    "type": "input-text"
                   },
                   {
                     "type": "divider"
@@ -428,7 +428,7 @@ Cards 模式支持 [Cards](./cards) 中的所有功能。
                   {
                     "name": "email",
                     "label": "邮箱",
-                    "type": "text",
+                    "type": "input-text",
                     "disabled": true
                   },
                   {
@@ -444,11 +444,11 @@ Cards 模式支持 [Cards](./cards) 中的所有功能。
               },
               {
                 "title": "角色信息",
-                "controls": []
+                "body": []
               },
               {
                 "title": "设置权限",
-                "controls": []
+                "body": []
               }
             ]
           }
@@ -478,9 +478,9 @@ Cards 模式支持 [Cards](./cards) 中的所有功能。
     "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/sample",
      "filter": {
         "title": "条件搜索",
-        "controls": [
+        "body": [
             {
-                "type": "text",
+                "type": "input-text",
                 "name": "keywords",
                 "placeholder": "通过关键字搜索"
             }
@@ -979,6 +979,19 @@ crud 组件支持通过配置`headerToolbar`和`footerToolbar`属性，实现在
 
 > 如果你不希望在顶部或者底部渲染默认组件，你可以设置`headerToolbar`和`footerToolbar`为空数组`[]`
 
+这些组件还能设置 `align` 来控制位置，有 `left` 和 `right` 两种，比如
+
+```json
+{
+  "headerToolbar": [
+    {
+      "type": "bulkActions",
+      "align": "right"
+    }
+  ]
+}
+```
+
 ### 其它 amis 组件
 
 在 `headerToolbar` 和 `footerToolbar` 中可以配置各种 amis 其它组件，比如按钮和 tpl：
@@ -1190,13 +1203,13 @@ crud 组件支持通过配置`headerToolbar`和`footerToolbar`属性，实现在
                 "body": {
                     "type": "form",
                     "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/sample/bulkUpdate2",
-                    "controls": [
+                    "body": [
                         {
                             "type": "hidden",
                             "name": "ids"
                         },
                         {
-                            "type": "text",
+                            "type": "input-text",
                             "name": "engine",
                             "label": "Engine"
                         }
@@ -1284,13 +1297,13 @@ crud 组件支持通过配置`headerToolbar`和`footerToolbar`属性，实现在
                 "body": {
                     "type": "form",
                     "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/sample/bulkUpdate2",
-                    "controls": [
+                    "body": [
                         {
                             "type": "hidden",
                             "name": "ids"
                         },
                         {
-                            "type": "text",
+                            "type": "input-text",
                             "name": "engine",
                             "label": "Engine"
                         }
@@ -1532,6 +1545,51 @@ crud 组件支持通过配置`headerToolbar`和`footerToolbar`属性，实现在
 }
 ```
 
+### 自定义导出 Excel 的文件名
+
+> 1.1.7 以上版本支持
+
+通过 filename 自定义导出文件名（支持模板变量）
+
+```schema: scope="body"
+{
+    "type": "crud",
+    "syncLocation": false,
+    "headerToolbar": [{
+        "type": "export-excel",
+        "label": "自定义导出 Excel",
+        "filename": "自定义文件名${test}",
+        "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/sample"
+    }],
+    "columns": [
+        {
+            "name": "id",
+            "label": "ID"
+        },
+        {
+            "name": "engine",
+            "label": "Rendering engine"
+        },
+        {
+            "name": "browser",
+            "label": "Browser"
+        },
+        {
+            "name": "platform",
+            "label": "Platform(s)"
+        },
+        {
+            "name": "version",
+            "label": "Engine version"
+        },
+        {
+            "name": "grade",
+            "label": "CSS grade"
+        }
+    ]
+}
+```
+
 ### 显隐显示查询条件表单
 
 在`headerToolbar`或者`footerToolbar`数组中添加`filter-toggler`字符串，并且在 crud 中配置`"filterTogglable": true`后，可以渲染一个可以切换显示查询表单的功能按钮
@@ -1543,9 +1601,9 @@ crud 组件支持通过配置`headerToolbar`和`footerToolbar`属性，实现在
     "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/sample",
      "filter": {
         "title": "条件搜索",
-        "controls": [
+        "body": [
             {
-                "type": "text",
+                "type": "input-text",
                 "name": "keywords",
                 "placeholder": "通过关键字搜索"
             }
@@ -1640,9 +1698,9 @@ crud 组件支持通过配置`headerToolbar`和`footerToolbar`属性，实现在
           {
             "type": "form",
             "api": "/api/sample/$id",
-            "controls": [
+            "body": [
               {
-                "type": "text",
+                "type": "input-text",
                 "name": "engine",
                 "label": "Engine"
               }
@@ -1840,9 +1898,9 @@ CRUD 中不限制有多少个单条操作、添加一个操作对应的添加一
     "loadDataOnce": true,
     "source": "${rows | filter:engine:match:keywords}",
     "filter":{
-        "controls": [
+        "body": [
             {
-                "type": "text",
+                "type": "input-text",
                 "name": "keywords",
                 "label": "引擎"
             }
