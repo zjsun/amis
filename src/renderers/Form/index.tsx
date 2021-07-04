@@ -17,7 +17,8 @@ import {
   cloneObject,
   SkipOperation,
   isEmpty,
-  getVariable
+  getVariable,
+  isObjectShallowModified
 } from '../../utils/helper';
 import debouce from 'lodash/debounce';
 import flatten from 'lodash/flatten';
@@ -34,7 +35,7 @@ import {isApiOutdated, isEffectiveApi} from '../../utils/api';
 import Spinner from '../../components/Spinner';
 import {LazyComponent} from '../../components';
 import {isAlive} from 'mobx-state-tree';
-import {asFormItem, renderToComponent} from './Item';
+import {asFormItem} from './Item';
 import {SimpleMap} from '../../utils/SimpleMap';
 import {trace} from 'mobx';
 import {
@@ -332,6 +333,17 @@ export interface FormProps
   formLazyChange?: boolean; // 表单的
 }
 
+class PlaceholderComponent extends React.Component {
+  render() {
+    const {renderChildren, ...rest} = this.props as any;
+
+    if (typeof renderChildren === 'function') {
+      return renderChildren(rest);
+    }
+
+    return null;
+  }
+}
 export default class Form extends React.Component<FormProps, object> {
   static defaultProps = {
     title: 'Form.title',
@@ -387,7 +399,9 @@ export default class Form extends React.Component<FormProps, object> {
     'formLazyChange',
     'lazyLoad',
     'formInited',
-    'simpleMode'
+    'simpleMode',
+    'inputOnly',
+    'value'
   ];
 
   hooks: {
@@ -429,10 +443,8 @@ export default class Form extends React.Component<FormProps, object> {
     this.initInterval = this.initInterval.bind(this);
     this.blockRouting = this.blockRouting.bind(this);
     this.beforePageUnload = this.beforePageUnload.bind(this);
-  }
 
-  componentWillMount() {
-    const {store, canAccessSuperData, persistData, simpleMode} = this.props;
+    const {store, canAccessSuperData, persistData, simpleMode} = props;
 
     store.setCanAccessSuperData(canAccessSuperData !== false);
     store.setPersistData(persistData);
@@ -818,7 +830,11 @@ export default class Form extends React.Component<FormProps, object> {
 
     store.changeValue(name, value, changePristine);
 
-    (formLazyChange === false ? this.emitChange : this.lazyEmitChange)(submit);
+    if (!changePristine) {
+      (formLazyChange === false ? this.emitChange : this.lazyEmitChange)(
+        submit
+      );
+    }
   }
 
   emitChange(submit: boolean) {
@@ -829,7 +845,7 @@ export default class Form extends React.Component<FormProps, object> {
 
     store.clearRestError();
 
-    (submit || submitOnChange) &&
+    (submit || (submitOnChange && store.inited)) &&
       this.handleAction(
         undefined,
         {
@@ -1402,16 +1418,8 @@ export default class Form extends React.Component<FormProps, object> {
         subSchema.name ||
         subSchema.hasOwnProperty('label'))
     ) {
-      // 如果是 children 用法，先转成 component，然后让下面的逻辑再包裹  asFormItem
-      const cache = this.componentCache.get(subSchema.children);
-      if (cache) {
-        subSchema.component = cache;
-      } else {
-        const cache = renderToComponent(subSchema.children);
-        this.componentCache.set(subSchema.children, cache);
-        subSchema.component = cache;
-      }
-
+      subSchema.component = PlaceholderComponent;
+      subSchema.renderChildren = subSchema.children;
       delete subSchema.children;
     }
 
@@ -1583,12 +1591,14 @@ export default class Form extends React.Component<FormProps, object> {
   type: 'form',
   storeType: FormStore.name,
   isolateScope: true,
-  shouldSyncSuperStore: (store, nextProps) => {
+  shouldSyncSuperStore: (store, props, prevProps) => {
     // 如果是 QuickEdit，让 store 同步 __super 数据。
     if (
-      nextProps.canAccessSuperData &&
-      nextProps.quickEditFormRef &&
-      nextProps.onQuickChange
+      props.canAccessSuperData &&
+      props.quickEditFormRef &&
+      props.onQuickChange &&
+      (isObjectShallowModified(prevProps.data, props.data) ||
+        isObjectShallowModified(prevProps.data.__super, props.data.__super))
     ) {
       return true;
     }
@@ -1599,10 +1609,11 @@ export default class Form extends React.Component<FormProps, object> {
 export class FormRenderer extends Form {
   static contextType = ScopedContext;
 
-  componentWillMount() {
-    const scoped = this.context as IScopedContext;
+  constructor(props: FormProps, context: IScopedContext) {
+    super(props);
+
+    const scoped = context;
     scoped.registerComponent(this);
-    super.componentWillMount();
   }
 
   componentDidMount() {

@@ -392,7 +392,7 @@ export class Select extends React.Component<SelectProps, SelectState> {
     let fn: () => void = noop;
 
     if (
-      props.value !== prevProps.value ||
+      JSON.stringify(props.value) !== JSON.stringify(prevProps.value) ||
       JSON.stringify(props.options) !== JSON.stringify(prevProps.options)
     ) {
       let selection: Array<Option>;
@@ -582,7 +582,7 @@ export class Select extends React.Component<SelectProps, SelectState> {
         };
         break;
       case DownshiftChangeTypes.controlledPropUpdatedSelectedItem:
-
+        break;
       case DownshiftChangeTypes.changeInput:
         update.highlightedIndex = 0;
         break;

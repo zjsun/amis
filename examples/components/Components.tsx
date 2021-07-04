@@ -564,9 +564,9 @@ export const components = [
         path: '/zh-CN/components/form/input-quarter-range',
         getComponent: () =>
           // @ts-ignore
-          import('../../docs/zh-CN/components/form/input-quarter-range.md').then(
-            makeMarkdownRenderer
-          )
+          import(
+            '../../docs/zh-CN/components/form/input-quarter-range.md'
+          ).then(makeMarkdownRenderer)
       },
       {
         label: 'Radios 单选框',
@@ -765,6 +765,15 @@ export const components = [
           )
       },
       {
+        label: 'Table View 表格视图',
+        path: '/zh-CN/components/table-view',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/table-view.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
         label: 'Card 卡片',
         path: '/zh-CN/components/card',
         getComponent: () =>
@@ -797,6 +806,16 @@ export const components = [
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/components/chart.md').then(
+            makeMarkdownRenderer
+          )
+      },
+
+      {
+        label: 'Code 代码高亮',
+        path: '/zh-CN/components/code',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/code.md').then(
             makeMarkdownRenderer
           )
       },

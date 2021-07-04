@@ -186,8 +186,8 @@ export default class Page extends React.Component<PageProps> {
     'showErrorMsg'
   ];
 
-  componentWillMount() {
-    const {store, location} = this.props;
+  constructor(props: PageProps) {
+    super(props);
 
     // autobind 会让继承里面的 super 指向有问题，所以先这样！
     bulkBindFunctions<Page /*为毛 this 的类型自动识别不出来？*/>(this, [
@@ -258,7 +258,7 @@ export default class Page extends React.Component<PageProps> {
     ctx: object,
     throwErrors: boolean = false,
     delegate?: IScopedContext
-  ) {
+  ): any {
     const {env, store, messages, onAction} = this.props;
 
     if (action.actionType === 'dialog') {
@@ -269,7 +269,7 @@ export default class Page extends React.Component<PageProps> {
       store.openDrawer(ctx);
     } else if (action.actionType === 'ajax') {
       store.setCurrentAction(action);
-      store
+      return store
         .saveRemote(action.api as string, ctx, {
           successMessage:
             (action.messages && action.messages.success) ||
@@ -290,7 +290,7 @@ export default class Page extends React.Component<PageProps> {
         })
         .catch(() => {});
     } else {
-      onAction(e, action, ctx, throwErrors, delegate || this.context);
+      return onAction(e, action, ctx, throwErrors, delegate || this.context);
     }
   }
 
@@ -647,10 +647,10 @@ export default class Page extends React.Component<PageProps> {
 export class PageRenderer extends Page {
   static contextType = ScopedContext;
 
-  componentWillMount() {
-    super.componentWillMount();
+  constructor(props: PageProps, context: IScopedContext) {
+    super(props);
 
-    const scoped = this.context as IScopedContext;
+    const scoped = context;
     scoped.registerComponent(this);
   }
 

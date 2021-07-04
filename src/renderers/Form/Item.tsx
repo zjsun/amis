@@ -12,11 +12,12 @@ import {
 import {anyChanged, ucFirst, getWidthRate, autobind} from '../../utils/helper';
 import {observer} from 'mobx-react';
 import {FormHorizontal, FormSchema, FormSchemaHorizontal} from '.';
-import {Schema} from '../../types';
+import {Api, Schema} from '../../types';
 import {filter} from '../../utils/tpl';
 import {SchemaRemark} from '../Remark';
 import {
   BaseSchema,
+  SchemaApi,
   SchemaClassName,
   SchemaObject,
   SchemaType
@@ -265,6 +266,11 @@ export interface FormBaseControl extends Omit<BaseSchema, 'type'> {
    * 表单项隐藏时，是否在当前 Form 中删除掉该表单项值。注意同名的未隐藏的表单项值也会删掉
    */
   clearValueOnHidden?: boolean;
+
+  /**
+   * 远端校验表单项接口
+   */
+  validateApi?: SchemaApi;
 }
 
 export interface FormItemBasicConfig extends Partial<RendererConfig> {
@@ -376,8 +382,10 @@ export interface FormItemConfig extends FormItemBasicConfig {
 export class FormItemWrap extends React.Component<FormItemProps> {
   reaction: any;
 
-  componentWillMount() {
-    const {formItem: model} = this.props;
+  constructor(props: FormItemProps) {
+    super(props);
+
+    const {formItem: model} = props;
 
     if (model) {
       this.reaction = reaction(
@@ -510,7 +518,7 @@ export class FormItemWrap extends React.Component<FormItemProps> {
     }
 
     description = description || desc;
-    const horizontal = this.props.horizontal || this.props.formHorizontal;
+    const horizontal = this.props.horizontal || this.props.formHorizontal || {};
     const left = getWidthRate(horizontal.left);
     const right = getWidthRate(horizontal.right);
 
@@ -548,10 +556,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
                     icon: labelRemark.icon || 'warning-mark',
                     tooltip: labelRemark,
                     className: cx(`Form-labelRemark`),
-                    container:
-                      env && env.getModalContainer
-                        ? env.getModalContainer
-                        : undefined
+                    container: this.props.popOverContainer
+                      ? this.props.popOverContainer
+                      : env && env.getModalContainer
+                      ? env.getModalContainer
+                      : undefined
                   })
                 : null}
             </span>
@@ -579,10 +588,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
                 icon: remark.icon || 'warning-mark',
                 tooltip: remark,
                 className: cx(`Form-remark`),
-                container:
-                  env && env.getModalContainer
-                    ? env.getModalContainer
-                    : undefined
+                container: this.props.popOverContainer
+                  ? this.props.popOverContainer
+                  : env && env.getModalContainer
+                  ? env.getModalContainer
+                  : undefined
               })
             : null}
 
@@ -633,7 +643,6 @@ export class FormItemWrap extends React.Component<FormItemProps> {
       renderLabel,
       renderDescription,
       hint,
-      formMode,
       data,
       showErrorMsg
     } = this.props;
@@ -661,10 +670,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
                     icon: labelRemark.icon || 'warning-mark',
                     tooltip: labelRemark,
                     className: cx(`Form-lableRemark`),
-                    container:
-                      env && env.getModalContainer
-                        ? env.getModalContainer
-                        : undefined
+                    container: this.props.popOverContainer
+                      ? this.props.popOverContainer
+                      : env && env.getModalContainer
+                      ? env.getModalContainer
+                      : undefined
                   })
                 : null}
             </span>
@@ -763,10 +773,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
                     icon: labelRemark.icon || 'warning-mark',
                     tooltip: labelRemark,
                     className: cx(`Form-lableRemark`),
-                    container:
-                      env && env.getModalContainer
-                        ? env.getModalContainer
-                        : undefined
+                    container: this.props.popOverContainer
+                      ? this.props.popOverContainer
+                      : env && env.getModalContainer
+                      ? env.getModalContainer
+                      : undefined
                   })
                 : null}
             </span>
@@ -788,10 +799,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
                 icon: remark.icon || 'warning-mark',
                 className: cx(`Form-remark`),
                 tooltip: remark,
-                container:
-                  env && env.getModalContainer
-                    ? env.getModalContainer
-                    : undefined
+                container: this.props.popOverContainer
+                  ? this.props.popOverContainer
+                  : env && env.getModalContainer
+                  ? env.getModalContainer
+                  : undefined
               })
             : null}
 
@@ -842,7 +854,6 @@ export class FormItemWrap extends React.Component<FormItemProps> {
       renderLabel,
       renderDescription,
       hint,
-      formMode,
       data,
       showErrorMsg
     } = this.props;
@@ -852,7 +863,7 @@ export class FormItemWrap extends React.Component<FormItemProps> {
     return (
       <div
         data-role="form-item"
-        className={cx(`Form-item Form-item--${formMode}`, className, {
+        className={cx(`Form-item Form-item--row`, className, {
           'is-error': model && !model.valid,
           [`is-required`]: required
         })}
@@ -871,10 +882,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
                       icon: labelRemark.icon || 'warning-mark',
                       tooltip: labelRemark,
                       className: cx(`Form-lableRemark`),
-                      container:
-                        env && env.getModalContainer
-                          ? env.getModalContainer
-                          : undefined
+                      container: this.props.popOverContainer
+                        ? this.props.popOverContainer
+                        : env && env.getModalContainer
+                        ? env.getModalContainer
+                        : undefined
                     })
                   : null}
               </span>
@@ -931,6 +943,7 @@ export class FormItemWrap extends React.Component<FormItemProps> {
 
   render() {
     const {formMode, inputOnly, wrap, render, formItem: model} = this.props;
+    const mode = this.props.mode || formMode;
 
     if (wrap === false || inputOnly) {
       return this.renderControl();
@@ -938,11 +951,11 @@ export class FormItemWrap extends React.Component<FormItemProps> {
 
     return (
       <>
-        {formMode === 'inline'
+        {mode === 'inline'
           ? this.renderInline()
-          : formMode === 'horizontal'
+          : mode === 'horizontal'
           ? this.renderHorizontal()
-          : formMode === 'row'
+          : mode === 'row'
           ? this.renderRow()
           : this.renderNormal()}
         {model
@@ -1083,10 +1096,8 @@ export function asFormItem(config: Omit<FormItemConfig, 'component'>) {
           constructor(props: FormItemProps) {
             super(props);
             this.refFn = this.refFn.bind(this);
-          }
 
-          componentWillMount() {
-            const {validations, formItem: model} = this.props;
+            const {validations, formItem: model} = props;
 
             // 组件注册的时候可能默认指定验证器类型
             if (model && !validations && config.validations) {
@@ -1094,8 +1105,6 @@ export function asFormItem(config: Omit<FormItemConfig, 'component'>) {
                 rules: config.validations
               });
             }
-
-            super.componentWillMount();
           }
 
           shouldComponentUpdate(nextProps: FormControlProps) {
@@ -1189,20 +1198,6 @@ export function FormItem(config: FormItemBasicConfig) {
     });
 
     return renderer.component as any;
-  };
-}
-
-export function renderToComponent(
-  children: JSX.Element | ((props: any) => JSX.Element)
-) {
-  return class extends React.Component {
-    render() {
-      if (typeof children === 'function') {
-        return children(this.props);
-      }
-
-      return children;
-    }
   };
 }
 

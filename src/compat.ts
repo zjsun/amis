@@ -363,6 +363,8 @@ function wrapControl(item: any) {
     className,
     inputClassName,
     columnClassName,
+    visibleOn,
+    visible,
     ...rest
   } = item;
 
@@ -394,7 +396,32 @@ function wrapControl(item: any) {
     horizontal,
     className,
     columnClassName,
+    visibleOn,
+    visible,
     body: rest
+  };
+}
+
+const maybeStatic = [
+  'tpl',
+  'mapping',
+  'progress',
+  'status',
+  'json',
+  'video',
+  'qrcode',
+  'plain',
+  'each'
+];
+
+function wrapStatic(item: any) {
+  if (!item || !item.type) {
+    return item;
+  }
+
+  return {
+    ...item,
+    type: `static-${item.type}`
   };
 }
 
@@ -425,12 +452,13 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
       )
     };
     delete schema.controls;
-  } else if (schema?.quickEdit?.type) {
-    schema = {
-      ...schema,
-      quickEdit: controlToNormalRenderer(schema.quickEdit)
-    };
-  } else if (Array.isArray(schema?.quickEdit?.controls)) {
+  } else if (
+    Array.isArray(schema?.quickEdit?.controls) &&
+    (!schema.quickEdit.type ||
+      !~['combo', 'group', 'panel', 'fieldSet', 'fieldset'].indexOf(
+        schema.quickEdit.type
+      ))
+  ) {
     schema = {
       ...schema,
       quickEdit: {
@@ -439,14 +467,19 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
       }
     };
     delete schema.quickEdit.controls;
+  } else if (schema?.quickEdit?.type) {
+    schema = {
+      ...schema,
+      quickEdit: controlToNormalRenderer(schema.quickEdit)
+    };
   } else if (schema?.type === 'tabs' && Array.isArray(schema.tabs)) {
     schema = {
       ...schema,
       tabs: schema.tabs.map(tab => {
-        if (Array.isArray(tab.controls)) {
+        if (Array.isArray(tab.controls) && !Array.isArray(tab.body)) {
           tab = {
             ...tab,
-            body: tab?.controls.map(controlToNormalRenderer)
+            body: tab.controls.map(controlToNormalRenderer)
           };
           delete tab.controls;
         }
@@ -490,15 +523,25 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
 
             body: column?.controls.map(controlToNormalRenderer)
           };
-          delete column.controls;
-          if (!column.type) {
-            column.type = 'wrapper';
-            column.size = 'none';
+
+          // 有可能直接外面的grid 或者 bhox 列里面用 form 的。
+          if (column.type !== 'form') {
+            delete column.type;
           }
+
+          delete column.controls;
         }
 
         return column;
       })
+    };
+  } else if (
+    schema?.type === 'service' &&
+    Array.isArray(schema?.body?.controls)
+  ) {
+    schema = {
+      ...schema,
+      body: schema.body.controls.map(controlToNormalRenderer)
     };
   }
 
@@ -520,6 +563,8 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
         }
       : ~maybeFormItem.indexOf(item?.type)
       ? wrapControl(item)
+      : ~maybeStatic.indexOf(item?.type)
+      ? wrapStatic(item)
       : item;
   }
 });
