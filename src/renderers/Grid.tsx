@@ -8,6 +8,7 @@ import {
   SchemaCollection,
   SchemaObject
 } from '../Schema';
+import {FormSchemaHorizontal} from './Form/index';
 
 export const ColProps = ['lg', 'md', 'sm', 'xs'];
 
@@ -108,8 +109,14 @@ export type GridColumnObject = {
    */
   lgPush?: number;
 
-  mode?: string;
-  horizontal?: any;
+  /**
+   * 配置子表单项默认的展示方式。
+   */
+  mode?: 'normal' | 'inline' | 'horizontal';
+  /**
+   * 如果是水平排版，这个属性可以细化水平排版的左右宽度占比。
+   */
+  horizontal?: FormSchemaHorizontal;
 
   body?: SchemaCollection;
 
@@ -179,13 +186,14 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
     region: string,
     node: SchemaCollection,
     key: number,
-    length: number
+    length: number,
+    props: any = {}
   ) {
     const {render, itemRender} = this.props;
 
     return itemRender
       ? itemRender(node, key, length, this.props)
-      : render(region, node);
+      : render(region, node, props);
   }
 
   renderColumn(column: ColumnNode, key: number, length: number) {
@@ -197,7 +205,13 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
       ...colProps
     };
 
-    const cx = this.props.classnames;
+    const {
+      classnames: cx,
+      formMode,
+      subFormMode,
+      subFormHorizontal,
+      formHorizontal
+    } = this.props;
 
     return (
       <div
@@ -222,7 +236,12 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
             `column/${key}`,
             column.type ? column : (column as any).body!,
             key,
-            length
+            length,
+            {
+              formMode: column.mode || subFormMode || formMode,
+              formHorizontal:
+                column.horizontal || subFormHorizontal || formHorizontal
+            }
           )
         )}
       </div>

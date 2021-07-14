@@ -453,6 +453,16 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       !!this.props.filterTogglable,
       this.props.filterDefaultVisible
     );
+
+    // 如果有 api，data 里面先写个 空数组，面得继承外层的 items
+    // 比如 crud 打开一个弹框，里面也是个 crud，默认一开始其实显示
+    // 的是外层 crud 的数据，等接口回来后就会变成新的。
+    // 加上这个就是为了解决这种情况
+    if (this.props.api) {
+      this.props.store.updateData({
+        items: []
+      });
+    }
   }
 
   componentDidMount() {
@@ -2033,6 +2043,10 @@ export default class CRUD extends React.Component<CRUDProps, any> {
               },
               {
                 key: 'filter',
+                panelClassName: cx(
+                  'Crud-filter',
+                  filter.panelClassName || 'Panel--default'
+                ),
                 data: store.filterData,
                 onReset: this.handleFilterReset,
                 onSubmit: this.handleFilterSubmit,
@@ -2135,6 +2149,27 @@ export class CRUDRenderer extends CRUD {
     super.componentWillUnmount();
     const scoped = this.context as IScopedContext;
     scoped.unRegisterComponent(this);
+  }
+
+  reload(subpath?: string, query?: any, ctx?: any) {
+    const scoped = this.context as IScopedContext;
+    if (subpath) {
+      return scoped.reload(
+        query ? `${subpath}?${qsstringify(query)}` : subpath,
+        ctx
+      );
+    }
+
+    return super.reload(subpath, query);
+  }
+
+  receive(values: any, subPath?: string) {
+    const scoped = this.context as IScopedContext;
+    if (subPath) {
+      return scoped.send(subPath, values);
+    }
+
+    return super.receive(values);
   }
 
   reloadTarget(target: string, data: any) {

@@ -349,6 +349,7 @@ export function wrapControl<
 
               rootStore.removeStore(this.model);
             }
+            delete this.model;
           }
 
           controlRef(control: any) {
@@ -489,7 +490,7 @@ export function wrapControl<
               return;
             }
             const value = this.model.tmpValue;
-            const oldValue = getVariable(data, this.model.name);
+            const oldValue = getVariable(data, this.model.name, false);
 
             if (oldValue === value) {
               return;
@@ -501,16 +502,16 @@ export function wrapControl<
             ) {
               return;
             }
+            const validated = this.model.validated;
             onChange?.(value, name!, submitOnChange === true);
 
             if (
               validateOnChange === true ||
-              (validateOnChange !== false &&
-                (formSubmited || this.model.validated))
+              (validateOnChange !== false && (formSubmited || validated))
             ) {
               this.validate();
             } else if (validateOnChange === false) {
-              this.model.reset();
+              this.model?.reset();
             }
           }
 

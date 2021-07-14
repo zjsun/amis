@@ -1,5 +1,6 @@
 import isPlainObject from 'lodash/isPlainObject';
 import isEqual from 'lodash/isEqual';
+import isNaN from 'lodash/isNaN';
 import uniq from 'lodash/uniq';
 import {Schema, PlainObject, FunctionPropertyNames} from '../types';
 import {evalExpression} from './tpl';
@@ -101,12 +102,7 @@ export function syncDataFromSuper(
         .map(item => `${item.name}`.replace(/\..*$/, ''))
         .concat(Object.keys(obj))
     );
-  } else if (
-    force ||
-    (store &&
-      store.storeType === 'ServiceStore' &&
-      store.parentStore.storeType === 'FormStore')
-  ) {
+  } else if (force) {
     keys = Object.keys(obj);
   }
 
@@ -300,7 +296,8 @@ export function isObjectShallowModified(
   prev: any,
   next: any,
   strictMode: boolean = true,
-  ignoreUndefined: boolean = false
+  ignoreUndefined: boolean = false,
+  statck: Array<any> = []
 ): boolean {
   if (Array.isArray(prev) && Array.isArray(next)) {
     return prev.length !== next.length
@@ -310,9 +307,12 @@ export function isObjectShallowModified(
             prev,
             next[index],
             strictMode,
-            ignoreUndefined
+            ignoreUndefined,
+            statck
           )
         );
+  } else if (isNaN(prev) && isNaN(next)) {
+    return false;
   } else if (
     null == prev ||
     null == next ||
@@ -335,12 +335,23 @@ export function isObjectShallowModified(
   ) {
     return true;
   }
+
+  // 避免循环引用死循环。
+  if (~statck.indexOf(prev)) {
+    return false;
+  }
+  statck.push(prev);
+
   for (let i: number = keys.length - 1; i >= 0; i--) {
     let key = keys[i];
     if (
-      strictMode
-        ? next[key] !== prev[key]
-        : isObjectShallowModified(next[key], prev[key], false, ignoreUndefined)
+      isObjectShallowModified(
+        prev[key],
+        next[key],
+        strictMode,
+        ignoreUndefined,
+        statck
+      )
     ) {
       return true;
     }

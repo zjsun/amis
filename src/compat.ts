@@ -411,7 +411,8 @@ const maybeStatic = [
   'video',
   'qrcode',
   'plain',
-  'each'
+  'each',
+  'link'
 ];
 
 function wrapStatic(item: any) {
@@ -444,16 +445,19 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
     };
   }
 
-  if (Array.isArray(schema?.controls) && schema.type !== 'audio') {
+  if (schema?.controls && schema.type !== 'audio') {
     schema = {
       ...schema,
-      [schema.type === 'combo' ? `items` : 'body']: schema?.controls.map(
-        controlToNormalRenderer
+      [schema.type === 'combo' ? `items` : 'body']: (Array.isArray(
+        schema.controls
       )
+        ? schema.controls
+        : [schema.controls]
+      ).map(controlToNormalRenderer)
     };
     delete schema.controls;
   } else if (
-    Array.isArray(schema?.quickEdit?.controls) &&
+    schema?.quickEdit?.controls &&
     (!schema.quickEdit.type ||
       !~['combo', 'group', 'panel', 'fieldSet', 'fieldset'].indexOf(
         schema.quickEdit.type
@@ -463,7 +467,10 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
       ...schema,
       quickEdit: {
         ...schema.quickEdit,
-        body: schema.quickEdit.controls.map(controlToNormalRenderer)
+        body: (Array.isArray(schema.quickEdit.controls)
+          ? schema.quickEdit.controls
+          : [schema.quickEdit.controls]
+        ).map(controlToNormalRenderer)
       }
     };
     delete schema.quickEdit.controls;
@@ -535,13 +542,13 @@ addSchemaFilter(function (schema: Schema, renderer: any, props: any) {
         return column;
       })
     };
-  } else if (
-    schema?.type === 'service' &&
-    Array.isArray(schema?.body?.controls)
-  ) {
+  } else if (schema?.type === 'service' && schema?.body?.controls) {
     schema = {
       ...schema,
-      body: schema.body.controls.map(controlToNormalRenderer)
+      body: (Array.isArray(schema.body.controls)
+        ? schema.body.controls
+        : [schema.body.controls]
+      ).map(controlToNormalRenderer)
     };
   }
 

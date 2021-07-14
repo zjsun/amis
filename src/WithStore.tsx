@@ -17,7 +17,7 @@ import {RootStoreContext} from './WithRootStore';
 
 export function HocStoreFactory(renderer: {
   storeType: string;
-  extendsData?: boolean;
+  extendsData?: boolean | ((props: any) => boolean);
   shouldSyncSuperStore?: (
     store: any,
     props: any,
@@ -63,7 +63,12 @@ export function HocStoreFactory(renderer: {
         }) as IIRendererStore;
         this.store = store;
 
-        if (renderer.extendsData === false) {
+        const extendsData =
+          typeof renderer.extendsData === 'function'
+            ? renderer.extendsData(props)
+            : renderer.extendsData;
+
+        if (extendsData === false) {
           store.initData(
             createObject(
               (this.props.data as any)
@@ -143,7 +148,11 @@ export function HocStoreFactory(renderer: {
           return;
         }
 
-        if (renderer.extendsData === false) {
+        const extendsData =
+          typeof renderer.extendsData === 'function'
+            ? renderer.extendsData(props)
+            : renderer.extendsData;
+        if (extendsData === false) {
           if (
             shouldSync === true ||
             prevProps.defaultData !== props.defaultData ||
@@ -185,7 +194,17 @@ export function HocStoreFactory(renderer: {
               )
             );
           } else if (props.data && (props.data as any).__super) {
-            store.initData(extendObject(props.data));
+            store.initData(
+              extendObject(
+                props.data,
+                store.hasRemoteData
+                  ? {
+                      ...store.data,
+                      ...props.data
+                    }
+                  : undefined
+              )
+            );
           } else {
             store.initData(createObject(props.scope, props.data));
           }
@@ -221,6 +240,8 @@ export function HocStoreFactory(renderer: {
           props.data === props.store!.data &&
           (shouldSync === true || prevProps.data !== props.data)
         ) {
+          // 只有父级数据变动的时候才应该进来，
+          // 目前看来这个 case 很少有情况下能进来
           store.initData(
             createObject(props.scope, {
               // ...nextProps.data,
