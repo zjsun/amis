@@ -9,6 +9,7 @@ import {
   SchemaObject
 } from '../Schema';
 import {FormSchemaHorizontal} from './Form/index';
+import {ucFirst} from '../utils/helper';
 
 export const ColProps = ['lg', 'md', 'sm', 'xs'];
 
@@ -16,103 +17,28 @@ export type GridColumnObject = {
   /**
    * 极小屏（<768px）时宽度占比
    */
-  xs?: number;
-
-  /**
-   * 极小屏（<768px）时是否隐藏该列
-   */
-  xsHidden?: boolean;
-
-  /**
-   * 极小屏（<768px）时宽度偏移量
-   */
-  xsOffset?: number;
-
-  /**
-   * 极小屏（<768px）时宽度右偏移量
-   */
-  xsPull?: number;
-
-  /**
-   * 极小屏（<768px）时宽度左偏移量
-   */
-  xsPush?: number;
+  xs?: number | 'auto';
 
   /**
    * 小屏时（>=768px）宽度占比
    */
-  sm?: number;
-
-  /**
-   * 小屏时（>=768px）是否隐藏该列
-   */
-  smHidden?: boolean;
-
-  /**
-   * 小屏时（>=768px）宽度偏移量
-   */
-  smOffset?: number;
-
-  /**
-   * 小屏时（>=768px）宽度右偏移量
-   */
-  smPull?: number;
-
-  /**
-   * 小屏时（>=768px）宽度左偏移量
-   */
-  smPush?: number;
+  sm?: number | 'auto';
 
   /**
    * 中屏时(>=992px)宽度占比
    */
-  md?: number;
-
-  /**
-   * 中屏时(>=992px)是否隐藏该列
-   */
-  mdHidden?: boolean;
-
-  /**
-   * 中屏时(>=992px)宽度偏移量
-   */
-  mdOffset?: number;
-
-  /**
-   * 中屏时(>=992px)宽度右偏移量
-   */
-  mdPull?: number;
-
-  /**
-   * 中屏时(>=992px)宽度左偏移量
-   */
-  mdPush?: number;
+  md?: number | 'auto';
 
   /**
    * 大屏时(>=1200px)宽度占比
    */
-  lg?: number;
-  /**
-   * 大屏时(>=1200px)是否隐藏该列
-   */
-  lgHidden?: boolean;
-  /**
-   * 大屏时(>=1200px)宽度偏移量
-   */
-  lgOffset?: number;
-  /**
-   * 大屏时(>=1200px)宽度右偏移量
-   */
-  lgPull?: number;
-  /**
-   * 大屏时(>=1200px)宽度左偏移量
-   */
-  lgPush?: number;
+  lg?: number | 'auto';
 
   /**
    * 配置子表单项默认的展示方式。
    */
   mode?: 'normal' | 'inline' | 'horizontal';
+
   /**
    * 如果是水平排版，这个属性可以细化水平排版的左右宽度占比。
    */
@@ -127,7 +53,7 @@ export type GridColumnObject = {
 };
 
 export type GridColumn = GridColumnObject & SchemaObject;
-export type ColumnNode = GridColumn | ColumnArray;
+export type ColumnNode = GridColumn;
 export interface ColumnArray extends Array<ColumnNode> {}
 
 /**
@@ -145,12 +71,7 @@ export interface GridSchema extends BaseSchema {
 export interface GridProps
   extends RendererProps,
     Omit<GridSchema, 'type' | 'className' | 'columnClassName'> {
-  itemRender?: (
-    item: any,
-    key: number,
-    length: number,
-    props: any
-  ) => JSX.Element;
+  itemRender?: (item: any, length: number, props: any) => JSX.Element;
 }
 
 function fromBsClass(cn: string) {
@@ -172,9 +93,9 @@ function copProps2Class(props: any): string {
     modifier =>
       props &&
       props[modifier] &&
-      cns.push(`Grid-col--${modifier}${props[modifier]}`)
+      cns.push(`Grid-col--${modifier}${ucFirst(props[modifier])}`)
   );
-  cns.length || cns.push('Grid-col--sm');
+  cns.length || cns.push('Grid-col--md');
   return cns.join(' ');
 }
 
@@ -185,14 +106,13 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
   renderChild(
     region: string,
     node: SchemaCollection,
-    key: number,
     length: number,
     props: any = {}
   ) {
     const {render, itemRender} = this.props;
 
     return itemRender
-      ? itemRender(node, key, length, this.props)
+      ? itemRender(node, length, this.props)
       : render(region, node, props);
   }
 
@@ -210,7 +130,8 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
       formMode,
       subFormMode,
       subFormHorizontal,
-      formHorizontal
+      formHorizontal,
+      translate: __
     } = this.props;
 
     return (
@@ -221,29 +142,11 @@ export default class Grid<T> extends React.Component<GridProps & T, object> {
           fromBsClass((column as any).columnClassName!)
         )}
       >
-        {Array.isArray(column) ? (
-          <div className={cx('Grid')}>
-            {column.map((column, key) =>
-              this.renderColumn(
-                column,
-                key,
-                (column as Array<GridColumn>).length
-              )
-            )}
-          </div>
-        ) : (
-          this.renderChild(
-            `column/${key}`,
-            column.type ? column : (column as any).body!,
-            key,
-            length,
-            {
-              formMode: column.mode || subFormMode || formMode,
-              formHorizontal:
-                column.horizontal || subFormHorizontal || formHorizontal
-            }
-          )
-        )}
+        {this.renderChild(`column/${key}`, (column as any).body || '', length, {
+          formMode: column.mode || subFormMode || formMode,
+          formHorizontal:
+            column.horizontal || subFormHorizontal || formHorizontal
+        })}
       </div>
     );
   }
