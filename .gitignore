@@ -26,3 +26,4 @@ node_modules
 /npm
 
 *.iml
+/mock/cfc/cfc.zip
