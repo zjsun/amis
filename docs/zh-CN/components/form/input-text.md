@@ -147,6 +147,66 @@ order: 56
 
 选择器模式下，支持部分选择器组件支持的配置项，具体请查看下面的属性表
 
+## 前缀和后缀
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "data": {
+        "unit": "MB"
+    },
+    "body": [
+        {
+            "name": "text",
+            "type": "input-text",
+            "label": "text",
+            "prefix": "￥",
+            "suffix": "RMB"
+        },
+        {
+            "name": "prefix",
+            "type": "input-text",
+            "label": "text",
+            "prefix": "￥"
+        },
+        {
+            "name": "suffix",
+            "type": "input-text",
+            "label": "text",
+            "suffix": "${unit}"
+        }
+    ]
+}
+```
+
+支持数据映射
+
+## 显示计数器
+
+```schema: scope="body"
+{
+    "type": "form",
+    "body": [
+        {
+            "name": "a",
+            "type": "input-text",
+            "label": "A",
+            "showCounter": true,
+            "placeholder": "请输入"
+        },
+        {
+            "name": "b",
+            "type": "input-text",
+            "label": "B",
+            "showCounter": true,
+            "maxLength": 100,
+            "placeholder": "请输入"
+        }
+    ]
+}
+```
+
 ## 属性表
 
 当做选择器表单项使用时，除了支持 [普通表单项属性表](./formitem#%E5%B1%9E%E6%80%A7%E8%A1%A8) 中的配置以外，还支持下面一些配置
@@ -169,3 +229,8 @@ order: 56
 | trimContents | `boolean`                                 |           | 是否去除首尾空白文本。                                                                      |
 | clearable    | `boolean`                                 |           | 是否可清除                                                                                  |
 | resetValue   | `string`                                  | `""`      | 清除后设置此配置项给定的值。                                                                |
+| prefix       | `string`                                  | `""`      | 前缀                                                                                        |
+| suffix       | `string`                                  | `""`      | 后缀                                                                                        |
+| showCounter  | `boolean`                                 | ``        | 是否显示计数器                                                                              |
+| minLength    | `number`                                  | ``        | 限制最小字数                                                                                |
+| maxLength    | `number`                                  | ``        | 限制最大字数                                                                                |

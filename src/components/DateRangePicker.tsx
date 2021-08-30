@@ -15,7 +15,7 @@ import Calendar from './calendar/Calendar';
 import PopOver from './PopOver';
 import {ClassNamesFn, themeable, ThemeProps} from '../theme';
 import {PlainObject} from '../types';
-import {noop} from '../utils/helper';
+import {noop, ucFirst} from '../utils/helper';
 import {LocaleProps, localeable} from '../locale';
 
 export interface DateRangePickerProps extends ThemeProps, LocaleProps {
@@ -46,6 +46,7 @@ export interface DateRangePickerProps extends ThemeProps, LocaleProps {
   dateFormat?: string;
   embed?: boolean;
   viewMode?: 'days' | 'months' | 'years' | 'time' | 'quarters';
+  borderMode?: 'full' | 'half' | 'none';
 }
 
 export interface DateRangePickerState {
@@ -173,6 +174,26 @@ export const availableRanges: {[propName: string]: any} = {
     },
     endDate: (now: moment.Moment) => {
       return now.startOf('quarter').add(-1, 'day').endOf('day');
+    }
+  },
+
+  'thisyear': {
+    label: 'DateRange.thisYear',
+    startDate: (now: moment.Moment) => {
+      return now.startOf('year');
+    },
+    endDate: (now: moment.Moment) => {
+      return now.endOf('year');
+    }
+  },
+
+  'lastYear': {
+    label: 'DateRange.lastYear',
+    startDate: (now: moment.Moment) => {
+      return now.startOf('year').add(-1, 'year');
+    },
+    endDate: (now: moment.Moment) => {
+      return now.endOf('year').add(-1, 'year').endOf('day');
     }
   }
 };
@@ -718,7 +739,8 @@ export class DateRangePicker extends React.Component<
       clearable,
       disabled,
       embed,
-      overlayPlacement
+      overlayPlacement,
+      borderMode
     } = this.props;
 
     const {isOpened, isFocused} = this.state;
@@ -766,7 +788,8 @@ export class DateRangePicker extends React.Component<
           `${ns}DateRangePicker`,
           {
             'is-disabled': disabled,
-            'is-focused': isFocused
+            'is-focused': isFocused,
+            [`${ns}DateRangePicker--border${ucFirst(borderMode)}`]: borderMode,
           },
           className
         )}

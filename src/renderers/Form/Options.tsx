@@ -241,7 +241,9 @@ export const detectProps = itemDetectProps.concat([
   'showRadio',
   'btnDisabled',
   'joinValues',
-  'extractValue'
+  'extractValue',
+  'borderMode',
+  'hideSelected'
 ]);
 
 export function registerOptionsControl(config: OptionsConfig) {
@@ -287,18 +289,27 @@ export function registerOptionsControl(config: OptionsConfig) {
         valueField,
         options,
         value,
-        defaultCheckAll,
+        defaultCheckAll
       } = props;
 
       if (formItem) {
-        formItem.setOptions(normalizeOptions(options), this.changeOptionValue);
+        formItem.setOptions(
+          normalizeOptions(options),
+          this.changeOptionValue,
+          data
+        );
 
         this.reaction = reaction(
           () => JSON.stringify([formItem.loading, formItem.filteredOptions]),
           () => this.forceUpdate()
         );
         // 默认全选。这里会和默认值\回填值逻辑冲突，所以如果有配置source则不执行默认全选
-        if (multiple && defaultCheckAll && formItem.filteredOptions?.length && !source) {
+        if (
+          multiple &&
+          defaultCheckAll &&
+          formItem.filteredOptions?.length &&
+          !source
+        ) {
           this.defaultCheckAll();
         }
       }
@@ -357,7 +368,8 @@ export function registerOptionsControl(config: OptionsConfig) {
       if (prevProps.options !== props.options && formItem) {
         formItem.setOptions(
           normalizeOptions(props.options || []),
-          this.changeOptionValue
+          this.changeOptionValue,
+          props.data
         );
         this.normalizeValue();
       } else if (
@@ -382,7 +394,8 @@ export function registerOptionsControl(config: OptionsConfig) {
           if (prevOptions !== options) {
             formItem.setOptions(
               normalizeOptions(options || []),
-              this.changeOptionValue
+              this.changeOptionValue,
+              props.data
             );
             this.normalizeValue();
           }
@@ -408,7 +421,7 @@ export function registerOptionsControl(config: OptionsConfig) {
       }
 
       if (prevProps.value !== props.value || formItem?.expressionsInOptions) {
-        formItem.syncOptions();
+        formItem.syncOptions(undefined, props.data);
         this.syncAutoFill(props.value);
       }
     }
@@ -532,11 +545,7 @@ export function registerOptionsControl(config: OptionsConfig) {
      * 初始化时处理默认全选逻辑
      */
     defaultCheckAll() {
-      const {
-        value,
-        formItem,
-        setPrinstineValue
-      } = this.props;
+      const {value, formItem, setPrinstineValue} = this.props;
       // 如果有默认值\回填值直接返回
       if (!formItem || formItem.getSelectedOptions(value).length) {
         return;
@@ -585,11 +594,7 @@ export function registerOptionsControl(config: OptionsConfig) {
 
     @autobind
     handleToggleAll() {
-      const {
-        value,
-        onChange,
-        formItem
-      } = this.props;
+      const {value, onChange, formItem} = this.props;
 
       if (!formItem) {
         return;
@@ -684,7 +689,8 @@ export function registerOptionsControl(config: OptionsConfig) {
             normalizeOptions(
               resolveVariableAndFilter(source as string, data, '| raw') || []
             ),
-            this.changeOptionValue
+            this.changeOptionValue,
+            data
           );
         return;
       } else if (!formItem || !isEffectiveApi(source, data)) {
@@ -761,14 +767,15 @@ export function registerOptionsControl(config: OptionsConfig) {
       formItem &&
         formItem.setOptions(
           skipNormalize ? options : normalizeOptions(options || []),
-          this.changeOptionValue
+          this.changeOptionValue,
+          this.props.data
         );
     }
 
     @autobind
     syncOptions() {
       const formItem = this.props.formItem as IFormItemStore;
-      formItem && formItem.syncOptions();
+      formItem && formItem.syncOptions(undefined, this.props.data);
     }
 
     @autobind
@@ -852,7 +859,7 @@ export function registerOptionsControl(config: OptionsConfig) {
           });
 
           if (!payload.ok) {
-            env.notify('error', payload.msg || '新增失败，请仔细检查');
+            env.notify('error', payload.msg || __('Options.createFailed'));
             result = null;
           } else {
             result = payload.data || result;
@@ -894,7 +901,7 @@ export function registerOptionsControl(config: OptionsConfig) {
             ? options.splice(idx, 0, {...result})
             : options.push({...result});
         }
-        model.setOptions(options, this.changeOptionValue);
+        model.setOptions(options, this.changeOptionValue, data);
       }
     }
 
@@ -990,7 +997,8 @@ export function registerOptionsControl(config: OptionsConfig) {
               ...origin,
               ...result
             }),
-            this.changeOptionValue
+            this.changeOptionValue,
+            data
           );
         }
       }
@@ -1048,7 +1056,8 @@ export function registerOptionsControl(config: OptionsConfig) {
           if (indexes) {
             model.setOptions(
               spliceTree(options, indexes, 1),
-              this.changeOptionValue
+              this.changeOptionValue,
+              data
             );
           }
         }

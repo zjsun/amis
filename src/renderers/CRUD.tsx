@@ -497,11 +497,11 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       this.renderFooterToolbar = this.renderFooterToolbar.bind(this);
     }
 
-    if (this.props.pickerMode && this.props.value !== props.value) {
+    if (this.props.pickerMode && this.props.value !== prevProps.value) {
       store.setSelectedItems(props.value);
     }
 
-    if (this.props.filterTogglable !== props.filterTogglable) {
+    if (this.props.filterTogglable !== prevProps.filterTogglable) {
       store.setFilterTogglable(
         !!props.filterTogglable,
         props.filterDefaultVisible
@@ -931,8 +931,9 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       if (component && component.props.type === 'form') {
         // 数据保存了，说明列表数据已经无效了，重新刷新。
         if (value && (value as any).__saved) {
+          const reload = action.reload ?? dialogAction.reload;
           // 配置了 reload 则跳过自动更新。
-          dialogAction.reload ||
+          reload ||
             this.search(
               dialogAction.__from ? {[pageField || 'page']: 1} : undefined,
               undefined,
@@ -950,11 +951,13 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       }
     }
 
-    if (dialogAction.reload) {
-      this.reloadTarget(dialogAction.reload, ctx);
+    const reload = action.reload ?? dialogAction.reload;
+    if (reload) {
+      this.reloadTarget(reload, ctx);
     }
 
-    const redirect = dialogAction.redirect && filter(action.redirect, ctx);
+    let redirect = action.redirect ?? dialogAction.redirect;
+    redirect = redirect && filter(redirect, ctx);
     redirect && env.jumpTo(redirect, dialogAction);
   }
 
@@ -1593,7 +1596,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       selectedItems.length ? selectedItems[0] : {}
     );
 
-    if (itemActions && selectedItems.length === 1) {
+    if (itemActions && selectedItems.length <= 1) {
       itemBtns = itemActions
         .map(item => ({
           ...item,
@@ -1639,7 +1642,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
             {
               key: `item-${index}`,
               data: itemData,
-              disabled: btn.disabled,
+              disabled: btn.disabled || selectedItems.length !== 1,
               onAction: this.handleItemAction.bind(this, btn, itemData)
             }
           )

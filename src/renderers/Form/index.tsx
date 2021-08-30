@@ -448,8 +448,10 @@ export default class Form extends React.Component<FormProps, object> {
     ) {
       const combo = store.parentStore as IComboStore;
       combo.addForm(store);
-      combo.forms.forEach(item =>
-        item.items.forEach(item => item.unique && item.syncOptions())
+      combo.forms.forEach(form =>
+        form.items.forEach(
+          item => item.unique && item.syncOptions(undefined, form.data)
+        )
       );
     }
   }
@@ -831,6 +833,10 @@ export default class Form extends React.Component<FormProps, object> {
 
   emitChange(submit: boolean) {
     const {onChange, store, submitOnChange} = this.props;
+
+    if (!isAlive(store)) {
+      return;
+    }
 
     onChange &&
       onChange(store.data, difference(store.data, store.pristine), this.props);
@@ -1220,7 +1226,9 @@ export default class Form extends React.Component<FormProps, object> {
           item =>
             item &&
             !!~['submit', 'button', 'button-group', 'reset'].indexOf(
-              (item as any)?.control?.type || (item as SchemaObject).type
+              (item as any)?.body?.[0]?.type ||
+                (item as any)?.body?.type ||
+                (item as SchemaObject).type
             )
         ))
     ) {
@@ -1553,11 +1561,14 @@ export default class Form extends React.Component<FormProps, object> {
   shouldSyncSuperStore: (store, props, prevProps) => {
     // 如果是 QuickEdit，让 store 同步 __super 数据。
     if (
-      props.canAccessSuperData &&
       props.quickEditFormRef &&
       props.onQuickChange &&
       (isObjectShallowModified(prevProps.data, props.data) ||
-        isObjectShallowModified(prevProps.data.__super, props.data.__super))
+        isObjectShallowModified(prevProps.data.__super, props.data.__super) ||
+        isObjectShallowModified(
+          prevProps.data.__super?.__super,
+          props.data.__super?.__super
+        ))
     ) {
       return true;
     }

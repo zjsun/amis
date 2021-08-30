@@ -14,7 +14,7 @@ import Downshift, {ControllerStateAndHelpers} from 'downshift';
 import {closeIcon, Icon} from './icons';
 // @ts-ignore
 import matchSorter from 'match-sorter';
-import {noop, isObject, findTree, autobind} from '../utils/helper';
+import {noop, isObject, findTree, autobind, ucFirst} from '../utils/helper';
 import find from 'lodash/find';
 import isPlainObject from 'lodash/isPlainObject';
 import union from 'lodash/union';
@@ -290,6 +290,15 @@ interface SelectProps extends OptionProps, ThemeProps, LocaleProps {
   defaultCheckAll?: boolean;
   simpleValue?: boolean;
   defaultOpen?: boolean;
+
+  /**
+   * 边框模式，全边框，还是半边框，或者没边框。
+   */
+  borderMode?: 'full' | 'half' | 'none';
+  /**
+   * 是否隐藏已选项
+   */
+  hideSelected?: boolean;
 }
 
 interface SelectState {
@@ -374,7 +383,7 @@ export class Select extends React.Component<SelectProps, SelectState> {
       JSON.stringify(props.value) !== JSON.stringify(prevProps.value) ||
       JSON.stringify(props.options) !== JSON.stringify(prevProps.options)
     ) {
-      const selection:  Array<Option> = value2array(props.value, props);
+      const selection: Array<Option> = value2array(props.value, props);
       this.setState(
         {
           selection: selection
@@ -687,6 +696,7 @@ export class Select extends React.Component<SelectProps, SelectState> {
       removable,
       overlayPlacement,
       translate: __,
+      hideSelected,
       renderMenu
     } = this.props;
     const {selection} = this.state;
@@ -719,6 +729,9 @@ export class Select extends React.Component<SelectProps, SelectState> {
       const item = filtedOptions[index];
       const checked =
         selectedItem === item || !!~selectionValues.indexOf(item[valueField]);
+      if (hideSelected && checked) {
+        return null;
+      }
       return (
         <div
           {...getItemProps({
@@ -944,7 +957,8 @@ export class Select extends React.Component<SelectProps, SelectState> {
       clearable,
       labelField,
       disabled,
-      checkAll
+      checkAll,
+      borderMode
     } = this.props;
 
     const selection = this.state.selection;
@@ -983,7 +997,8 @@ export class Select extends React.Component<SelectProps, SelectState> {
                   [`Select--searchable`]: searchable,
                   'is-opened': isOpen,
                   'is-focused': this.state.isFocused,
-                  'is-disabled': disabled
+                  'is-disabled': disabled,
+                  [`Select--border${ucFirst(borderMode)}`]: borderMode
                 },
                 className
               )}
