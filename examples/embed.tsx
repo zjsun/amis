@@ -23,10 +23,10 @@ import 'history';
 export function embed(
   container: string | HTMLElement,
   schema: any,
-  props: any,
-  env: any
+  props?: any,
+  env?: any
 ) {
-  const __ = makeTranslator(env.locale || props.locale);
+  const __ = makeTranslator(env?.locale || props?.locale);
 
   if (typeof container === 'string') {
     container = document.querySelector(container) as HTMLElement;
@@ -71,9 +71,9 @@ export function embed(
           response.data.toString() === '[object Blob]'
             ? response.data
             : new Blob([response.data], {type: type});
-        if (typeof window.navigator.msSaveBlob !== 'undefined') {
+        if (typeof (window.navigator as any).msSaveBlob !== 'undefined') {
           // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created. These URLs will no longer resolve as the data backing the URL has been freed."
-          window.navigator.msSaveBlob(blob, filename);
+          (window.navigator as any).msSaveBlob(blob, filename);
         } else {
           let URL = window.URL || (window as any).webkitURL;
           let downloadUrl = URL.createObjectURL(blob);
@@ -130,6 +130,16 @@ export function embed(
     return response;
   };
 
+  const requestAdaptor = (config: any) => {
+    const fn =
+      env && typeof env.requestAdaptor === 'function'
+        ? env.requestAdaptor.bind()
+        : (config: any) => config;
+    const request = fn(config) || config;
+
+    return request;
+  };
+
   const responseAdaptor = (api: any) => (value: any) => {
     let response = value.data || {}; // blob 下可能会返回内容为空？
     // 之前拼写错了，需要兼容
@@ -167,12 +177,7 @@ export function embed(
     getModalContainer: () =>
       env?.getModalContainer?.() || document.querySelector('.amis-scope'),
     notify: (type: string, msg: string) =>
-      toast[type]
-        ? toast[type](
-            msg,
-            type === 'error' ? __('System.error') : __('System.message')
-          )
-        : console.warn('[Notify]', type, msg),
+      toast[type] ? toast[type](msg) : console.warn('[Notify]', type, msg),
     alert,
     confirm,
     updateLocation: (to: any, replace: boolean) => {
@@ -247,6 +252,7 @@ export function embed(
     fetcher: async (api: any) => {
       let {url, method, data, responseType, config, headers} = api;
       config = config || {};
+      config.url = url;
       config.withCredentials = true;
       responseType && (config.responseType = responseType);
 
@@ -258,6 +264,9 @@ export function embed(
 
       config.headers = headers || {};
       config.method = method;
+      config.data = data;
+
+      config = requestAdaptor(config);
 
       if (method === 'get' && data) {
         config.params = data;
@@ -278,8 +287,7 @@ export function embed(
         return true;
       };
 
-      data && (config.data = data);
-      let response = await axios(url, config);
+      let response = await axios(config);
       response = await attachmentAdpator(response);
       response = responseAdaptor(api)(response);
 

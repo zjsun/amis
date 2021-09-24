@@ -237,6 +237,11 @@ export interface TableSchema extends BaseSchema {
    * 底部总结行
    */
   affixRow?: Array<SchemaObject>;
+
+  /**
+   * 是否可调整列宽
+   */
+  resizable?: boolean;
 }
 
 export interface TableProps extends RendererProps {
@@ -263,7 +268,7 @@ export interface TableProps extends RendererProps {
   columnsTogglable?: boolean | 'auto';
   affixHeader?: boolean;
   affixColumns?: boolean;
-  combineNum?: number;
+  combineNum?: number | string;
   combineFromIndex?: number;
   footable?:
     | boolean
@@ -375,7 +380,8 @@ export default class Table extends React.Component<TableProps, object> {
     itemCheckableOn: '',
     itemDraggableOn: '',
     hideCheckToggler: false,
-    canAccessSuperData: false
+    canAccessSuperData: false,
+    resizable: true
   };
 
   table?: HTMLTableElement;
@@ -440,13 +446,20 @@ export default class Table extends React.Component<TableProps, object> {
       itemCheckableOn,
       itemDraggableOn,
       hideCheckToggler,
-      combineNum,
       combineFromIndex,
       expandConfig,
       formItem,
       keepItemSelectionOnPageChange,
       maxKeepItemSelectionLength
     } = props;
+
+    let combineNum = props.combineNum;
+    if (typeof combineNum === 'string') {
+      combineNum = parseInt(
+        resolveVariableAndFilter(combineNum, props.data, '| raw'),
+        10
+      );
+    }
 
     store.update({
       selectable,
@@ -556,6 +569,13 @@ export default class Table extends React.Component<TableProps, object> {
         props
       )
     ) {
+      let combineNum = props.combineNum;
+      if (typeof combineNum === 'string') {
+        combineNum = parseInt(
+          resolveVariableAndFilter(combineNum, props.data, '| raw'),
+          10
+        );
+      }
       store.update({
         selectable: props.selectable,
         columnsTogglable: props.columnsTogglable,
@@ -568,7 +588,7 @@ export default class Table extends React.Component<TableProps, object> {
         itemCheckableOn: props.itemCheckableOn,
         itemDraggableOn: props.itemDraggableOn,
         hideCheckToggler: props.hideCheckToggler,
-        combineNum: props.combineNum,
+        combineNum: combineNum,
         combineFromIndex: props.combineFromIndex,
         expandConfig: props.expandConfig
       });
@@ -850,9 +870,8 @@ export default class Table extends React.Component<TableProps, object> {
     forEach(
       table.querySelectorAll('thead>tr:last-child>th'),
       (item: HTMLElement) => {
-        widths[
-          item.getAttribute('data-index') as string
-        ] = item.getBoundingClientRect().width;
+        widths[item.getAttribute('data-index') as string] =
+          item.getBoundingClientRect().width;
       }
     );
     forEach(
@@ -895,9 +914,11 @@ export default class Table extends React.Component<TableProps, object> {
     );
 
     if (affixHeader) {
-      (dom.querySelector(
-        `.${ns}Table-fixedTop>.${ns}Table-wrapper`
-      ) as HTMLElement).style.cssText += `width: ${this.outterWidth}px`;
+      (
+        dom.querySelector(
+          `.${ns}Table-fixedTop>.${ns}Table-wrapper`
+        ) as HTMLElement
+      ).style.cssText += `width: ${this.outterWidth}px`;
     }
 
     this.lastScrollLeft = -1;
@@ -1207,6 +1228,44 @@ export default class Table extends React.Component<TableProps, object> {
     }
   }
 
+  // 以下变量都是用于列宽度调整拖拽
+  resizeLine: HTMLElement;
+  resizeLineLeft: number;
+  targetTh: HTMLElement;
+  targetThWidth: number;
+  lineStartX: number;
+
+  // 开始列宽度调整
+  @autobind
+  handleColResizeMouseDown(e: React.MouseEvent<HTMLElement>) {
+    this.lineStartX = e.clientX;
+    const currentTarget = e.currentTarget;
+    this.resizeLine = currentTarget;
+    this.resizeLineLeft = parseInt(
+      getComputedStyle(this.resizeLine).getPropertyValue('left'),
+      10
+    );
+    this.targetTh = this.resizeLine.parentElement! as HTMLElement;
+    this.targetThWidth = this.targetTh.getBoundingClientRect().width;
+    document.addEventListener('mousemove', this.handleColResizeMouseMove);
+    document.addEventListener('mouseup', this.handleColResizeMouseUp);
+  }
+
+  // 垂直线拖拽移动
+  @autobind
+  handleColResizeMouseMove(e: MouseEvent) {
+    const moveX = e.clientX - this.lineStartX;
+    this.resizeLine.style.left = this.resizeLineLeft + moveX + 'px';
+    this.targetTh.style.width = this.targetThWidth + moveX + 'px';
+  }
+
+  // 垂直线拖拽结束
+  @autobind
+  handleColResizeMouseUp(e: MouseEvent) {
+    document.removeEventListener('mousemove', this.handleColResizeMouseMove);
+    document.removeEventListener('mouseup', this.handleColResizeMouseUp);
+  }
+
   renderHeading() {
     let {
       title,
@@ -1291,6 +1350,7 @@ export default class Table extends React.Component<TableProps, object> {
       env,
       render,
       classPrefix: ns,
+      resizable,
       classnames: cx
     } = this.props;
 
@@ -1426,6 +1486,14 @@ export default class Table extends React.Component<TableProps, object> {
       props.style.width = column.pristine.width;
     }
 
+    const resizeLine = (
+      <div
+        className={cx('Table-content-colDragLine')}
+        key={`resize-${column.index}`}
+        onMouseDown={this.handleColResizeMouseDown}
+      ></div>
+    );
+
     return (
       <th
         {...props}
@@ -1456,6 +1524,7 @@ export default class Table extends React.Component<TableProps, object> {
         </div>
 
         {affix}
+        {resizable === false ? null : resizeLine}
       </th>
     );
   }
@@ -1924,7 +1993,8 @@ export default class Table extends React.Component<TableProps, object> {
               rowIndex += 1;
               const sheetRow = worksheet.getRow(rowIndex);
               let columIndex = 0;
-              for (const column of columns) {
+              const cols = columns as any[]; // 为啥 ts 4.4 得这么做？
+              for (const column of cols) {
                 columIndex += 1;
                 const name = column.name!;
                 const value = getVariable(row.data, name);
@@ -1951,53 +2021,57 @@ export default class Table extends React.Component<TableProps, object> {
 
                 const type = (column as BaseSchema).type || 'plain';
                 if (type === 'image') {
-                  const imageData = await toDataURL(value);
-                  const imageDimensions = await getImageDimensions(imageData);
-                  let imageWidth = imageDimensions.width;
-                  let imageHeight = imageDimensions.height;
-                  // 限制一下图片高宽
-                  const imageMaxSize = 100;
-                  if (imageWidth > imageHeight) {
-                    if (imageWidth > imageMaxSize) {
-                      imageHeight = (imageMaxSize * imageHeight) / imageWidth;
-                      imageWidth = imageMaxSize;
+                  try {
+                    const imageData = await toDataURL(value);
+                    const imageDimensions = await getImageDimensions(imageData);
+                    let imageWidth = imageDimensions.width;
+                    let imageHeight = imageDimensions.height;
+                    // 限制一下图片高宽
+                    const imageMaxSize = 100;
+                    if (imageWidth > imageHeight) {
+                      if (imageWidth > imageMaxSize) {
+                        imageHeight = (imageMaxSize * imageHeight) / imageWidth;
+                        imageWidth = imageMaxSize;
+                      }
+                    } else {
+                      if (imageHeight > imageMaxSize) {
+                        imageWidth = (imageMaxSize * imageWidth) / imageHeight;
+                        imageHeight = imageMaxSize;
+                      }
                     }
-                  } else {
-                    if (imageHeight > imageMaxSize) {
-                      imageWidth = (imageMaxSize * imageWidth) / imageHeight;
-                      imageHeight = imageMaxSize;
+                    const imageMatch = imageData.match(/data:image\/(.*);/);
+                    let imageExt = 'png';
+                    if (imageMatch) {
+                      imageExt = imageMatch[1];
                     }
-                  }
-                  const imageMatch = imageData.match(/data:image\/(.*);/);
-                  let imageExt = 'png';
-                  if (imageMatch) {
-                    imageExt = imageMatch[1];
-                  }
-                  // 目前 excel 只支持这些格式，所以其它格式直接输出 url
-                  if (
-                    imageExt != 'png' &&
-                    imageExt != 'jpeg' &&
-                    imageExt != 'gif'
-                  ) {
-                    sheetRow.getCell(columIndex).value = value;
-                    continue;
-                  }
-                  const imageId = workbook.addImage({
-                    base64: imageData,
-                    extension: imageExt
-                  });
-                  const linkURL = getAbsoluteUrl(value);
-                  worksheet.addImage(imageId, {
-                    // 这里坐标位置是从 0 开始的，所以要减一
-                    tl: {col: columIndex - 1, row: rowIndex - 1},
-                    ext: {
-                      width: imageWidth,
-                      height: imageHeight
-                    },
-                    hyperlinks: {
-                      tooltip: linkURL
+                    // 目前 excel 只支持这些格式，所以其它格式直接输出 url
+                    if (
+                      imageExt != 'png' &&
+                      imageExt != 'jpeg' &&
+                      imageExt != 'gif'
+                    ) {
+                      sheetRow.getCell(columIndex).value = value;
+                      continue;
                     }
-                  });
+                    const imageId = workbook.addImage({
+                      base64: imageData,
+                      extension: imageExt
+                    });
+                    const linkURL = getAbsoluteUrl(value);
+                    worksheet.addImage(imageId, {
+                      // 这里坐标位置是从 0 开始的，所以要减一
+                      tl: {col: columIndex - 1, row: rowIndex - 1},
+                      ext: {
+                        width: imageWidth,
+                        height: imageHeight
+                      },
+                      hyperlinks: {
+                        tooltip: linkURL
+                      }
+                    });
+                  } catch (e) {
+                    console.warn(e.stack);
+                  }
                 } else if (type == 'link') {
                   const linkURL = getAbsoluteUrl(value);
                   sheetRow.getCell(columIndex).value = {
@@ -2039,8 +2113,7 @@ export default class Table extends React.Component<TableProps, object> {
 
             if (buffer) {
               var blob = new Blob([buffer], {
-                type:
-                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
               });
               saveAs(blob, filename + '.xlsx');
             }

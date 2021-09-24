@@ -3,6 +3,8 @@ import {register} from '../locale';
 register('en-US', {
   'Action.countDown': 'Wait for ${timeLeft}s',
   'Alert.info': 'System Info',
+  'App.home': 'Home',
+  'App.navigation': 'Navigation',
   'asc': 'Asc',
   'cancel': 'Cancel',
   'Card.dragTip': 'Drag top button to sort',
@@ -80,6 +82,7 @@ register('en-US', {
   'Dialog.close': 'Close',
   'Embed.invalidRoot': 'Invalid root selector',
   'Embed.downloading': 'Start downloading',
+  'Excel.placeholder': `Drag 'n' drop excel here, or click to select`,
   'fetchFailed': 'Fetch api failed',
   'File.continueAdd': 'Continue add',
   'File.dragDrop': `Drag 'n' drop some files here`,

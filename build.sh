@@ -25,20 +25,11 @@ cp sdk/sdk.css sdk/cxd.css
 cp sdk/sdk-ie11.css sdk/cxd-ie11.css
 
 cp ./lib/helper.css sdk/helper.css
+cp ./lib/helper.css.map sdk/helper.css.map
 cp examples/static/iconfont.css sdk/
 cp examples/static/iconfont.eot sdk/
 
 # 生成 .d.ts 文件
-./node_modules/.bin/tsc --allowJs --declaration
-
-cd output
-
-for f in $(find . -name "*.d.ts"); do
-    mkdir -p ../lib/$(dirname $f) && mv $f ../lib/$(dirname $f)
-done
-
-cd ..
-
-rm -rf output
+./node_modules/.bin/tsc --declaration --emitDeclarationOnly --outDir ./lib --project ./tsconfig-for-declaration.json
 
 npm run build-schemas

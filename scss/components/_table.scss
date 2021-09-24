@@ -185,6 +185,25 @@
     min-height: 0.01%;
     overflow-x: auto;
     transform: translateZ(0);
+
+    th {
+      position: relative;
+    }
+  }
+
+  &-content-colDragLine {
+    position: absolute;
+    width: 7px;
+    top: 0;
+    bottom: 0;
+    right: -4px;
+    cursor: col-resize;
+    user-select: none;
+    opacity: 0.5;
+    z-index: $zindex-top;
+    &:hover {
+      background: var(--primary);
+    }
   }
 
   &-table {
@@ -792,6 +811,9 @@
         top ease-in-out var(--animation-duration);
       position: relative;
       transform-origin: 50% 50%;
+      width: px2rem(10px);
+      height: px2rem(10px);
+      top: 0;
     }
 
     &.is-active > svg {

@@ -3,6 +3,8 @@ import {register} from '../locale';
 register('zh-CN', {
   'Action.countDown': '请等待 ${timeLeft} 秒',
   'Alert.info': '系统消息',
+  'App.home': '首页',
+  'App.navigation': '导航',
   'asc': '正序',
   'cancel': '取消',
   'Card.dragTip': '请拖动顶部的按钮进行排序',
@@ -82,6 +84,7 @@ register('zh-CN', {
   'Dialog.close': '关闭',
   'Embed.invalidRoot': '选择器不对，页面上没有此元素',
   'Embed.downloading': '文件即将开始下载。。',
+  'Excel.placeholder': '拖拽 Excel 到这，或点击上传',
   'fetchFailed': '初始化失败',
   'File.continueAdd': '继续添加',
   'File.dragDrop': '将文件拖拽到此处',

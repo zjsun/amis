@@ -50,18 +50,19 @@ export function monacoFactory(
   options: any
 ) {
   return monaco.editor.create(containerElement, {
-    autoIndent: true,
-    formatOnType: true,
-    formatOnPaste: true,
-    selectOnLineNumbers: true,
-    scrollBeyondLastLine: false,
-    folding: true,
-    minimap: {
+    'autoIndent': true,
+    'formatOnType': true,
+    'formatOnPaste': true,
+    'selectOnLineNumbers': true,
+    'scrollBeyondLastLine': false,
+    'folding': true,
+    'minimap': {
       enabled: false
     },
-    scrollbar: {
+    'scrollbar': {
       alwaysConsumeMouseWheel: false
     },
+    'bracketPairColorization.enabled': true,
     ...options
   });
 }
@@ -298,7 +299,7 @@ export class Editor extends React.Component<EditorProps, any> {
       height,
       translate: __
     } = this.props;
-    let style = this.props.style || {};
+    let style = {...(this.props.style || {})};
 
     style.width = width;
     style.height = height;

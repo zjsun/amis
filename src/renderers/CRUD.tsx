@@ -19,7 +19,8 @@ import {
   noop,
   isVisible,
   getVariable,
-  qsstringify
+  qsstringify,
+  qsparse
 } from '../utils/helper';
 import {observer} from 'mobx-react';
 import partition from 'lodash/partition';
@@ -28,7 +29,6 @@ import Button from '../components/Button';
 import Select from '../components/Select';
 import getExprProperties from '../utils/filter-schema';
 import pick from 'lodash/pick';
-import qs from 'qs';
 import {findDOMNode} from 'react-dom';
 import {evalExpression, filter} from '../utils/tpl';
 import {
@@ -307,7 +307,7 @@ export type CRUDListSchema = CRUDCommonSchema & {
   mode: 'list';
 } & Omit<ListSchema, 'type'>;
 
-export type CRUDTableSchem = CRUDCommonSchema & {
+export type CRUDTableSchema = CRUDCommonSchema & {
   mode?: 'table';
 } & Omit<TableSchema, 'type'>;
 
@@ -315,7 +315,7 @@ export type CRUDTableSchem = CRUDCommonSchema & {
  * CRUD 增删改查渲染器。
  * 文档：https://baidu.gitee.io/amis/docs/components/crud
  */
-export type CRUDSchema = CRUDCardsSchema | CRUDListSchema | CRUDTableSchem;
+export type CRUDSchema = CRUDCardsSchema | CRUDListSchema | CRUDTableSchema;
 
 export interface CRUDProps
   extends RendererProps,
@@ -435,14 +435,14 @@ export default class CRUD extends React.Component<CRUDProps, any> {
 
     if (syncLocation && location && (location.query || location.search)) {
       store.updateQuery(
-        qs.parse(location.search.substring(1)),
+        qsparse(location.search.substring(1)),
         undefined,
         pageField,
         perPageField
       );
     } else if (syncLocation && !location && window.location.search) {
       store.updateQuery(
-        qs.parse(window.location.search.substring(1)) as object,
+        qsparse(window.location.search.substring(1)) as object,
         undefined,
         pageField,
         perPageField
@@ -517,7 +517,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     ) {
       // 同步地址栏，那么直接检测 query 是否变了，变了就重新拉数据
       store.updateQuery(
-        qs.parse(props.location.search.substring(1)),
+        qsparse(props.location.search.substring(1)),
         undefined,
         props.pageField,
         props.perPageField
@@ -804,18 +804,11 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       perPageField,
       loadDataOnceFetchOnFilter
     } = this.props;
+
     values = syncLocation
-      ? qs.parse(
-          qsstringify(
-            values,
-            {
-              arrayFormat: 'indices',
-              encodeValuesOnly: true
-            },
-            true
-          )
-        )
+      ? qsparse(qsstringify(values, undefined, true))
       : values;
+
     store.updateQuery(
       {
         ...values,
@@ -962,12 +955,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   }
 
   handleDialogClose() {
-    const {
-      store,
-      stopAutoRefreshWhenModalIsOpen,
-      silentPolling,
-      interval
-    } = this.props;
+    const {store, stopAutoRefreshWhenModalIsOpen, silentPolling, interval} =
+      this.props;
     store.closeDialog();
 
     if (stopAutoRefreshWhenModalIsOpen && interval) {
@@ -1200,14 +1189,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   }
 
   handleSaveOrder(moved: Array<object>, rows: Array<object>) {
-    const {
-      store,
-      saveOrderApi,
-      orderField,
-      primaryField,
-      env,
-      reload
-    } = this.props;
+    const {store, saveOrderApi, orderField, primaryField, env, reload} =
+      this.props;
 
     if (!saveOrderApi) {
       env && env.alert('CRUD saveOrderApi is required!');
@@ -1419,11 +1402,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   }
 
   handleChildPopOverClose(popOver: any) {
-    const {
-      stopAutoRefreshWhenModalIsOpen,
-      silentPolling,
-      interval
-    } = this.props;
+    const {stopAutoRefreshWhenModalIsOpen, silentPolling, interval} =
+      this.props;
 
     if (popOver && ~['dialog', 'drawer'].indexOf(popOver.mode)) {
       this.props.store.setInnerModalOpened(false);

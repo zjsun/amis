@@ -18,7 +18,8 @@ import {
   SkipOperation,
   isEmpty,
   getVariable,
-  isObjectShallowModified
+  isObjectShallowModified,
+  qsparse
 } from '../../utils/helper';
 import debouce from 'lodash/debounce';
 import flatten from 'lodash/flatten';
@@ -29,7 +30,6 @@ import Scoped, {
   ScopedComponentType
 } from '../../Scoped';
 import {IComboStore} from '../../store/combo';
-import qs from 'qs';
 import {dataMapping} from '../../utils/tpl-builtin';
 import {isApiOutdated, isEffectiveApi} from '../../utils/api';
 import Spinner from '../../components/Spinner';
@@ -1141,13 +1141,7 @@ export default class Form extends React.Component<FormProps, object> {
       values[0] &&
       targets[0].props.type === 'form'
     ) {
-      store.updateData(values[0]);
-      onChange &&
-        onChange(
-          store.data,
-          difference(store.data, store.pristine),
-          this.props
-        );
+      this.handleBulkChange(values[0], false);
     }
 
     store.closeDialog(true);
@@ -1438,6 +1432,9 @@ export default class Form extends React.Component<FormProps, object> {
         onSubmit={this.handleFormSubmit}
         noValidate
       >
+        {/* 实现回车自动提交 */}
+        <input type="submit" style={{display: 'none'}} />
+
         {debug ? (
           <pre>
             <code>{JSON.stringify(store.data, null, 2)}</code>
@@ -1490,8 +1487,6 @@ export default class Form extends React.Component<FormProps, object> {
             show: store.drawerOpen
           }
         )}
-        {/* 实现回车自动提交 */}
-        <input type="submit" style={{display: 'none'}} />
       </WrapperComponent>
     );
   }
@@ -1701,7 +1696,7 @@ export class FormRenderer extends Form {
     const idx2 = target ? target.indexOf('?') : -1;
     if (~idx2) {
       subQuery = dataMapping(
-        qs.parse((target as string).substring(idx2 + 1)),
+        qsparse((target as string).substring(idx2 + 1)),
         ctx
       );
       target = (target as string).substring(0, idx2);

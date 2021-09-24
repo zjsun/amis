@@ -33,6 +33,8 @@ SDK 版本适合对前端或 React 不了解的开发者，它不依赖 npm 及 
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <link rel="stylesheet" href="sdk.css" />
     <link rel="stylesheet" href="helper.css" />
+    <link rel="stylesheet" href="iconfont.css" />
+    <!-- 这是默认主题所需的，如果是其他主题则不需要 -->
     <!-- 从 1.1.0 开始 sdk.css 将不支持 IE 11，如果要支持 IE11 请引用这个 css，并把前面那个删了 -->
     <!-- <link rel="stylesheet" href="sdk-ie11.css" /> -->
     <!-- 不过 amis 开发团队几乎没测试过 IE 11 下的效果，所以可能有细节功能用不了，如果发现请报 issue -->
@@ -154,6 +156,12 @@ let amisScoped = amis.embed(
   {
     // 可以不传，用来实现 ajax 请求
     fetcher: (url, method, data, config) => {},
+
+    // 可以不传，全局 api 请求适配器
+    // 另外在 amis 配置项中的 api 也可以配置适配器，针对某个特定接口单独处理。
+    responseAdaptor(api) {
+      return api;
+    }
 
     // 可以不传，全局 api 适配器。
     // 另外在 amis 配置项中的 api 也可以配置适配器，针对某个特定接口单独处理。
@@ -285,6 +293,72 @@ amisScoped.unmount();
 npm i amis
 ```
 
+### webpack 配置参考
+
+如果要使用代码编辑器，需要 `monaco-editor-webpack-plugin` 插件
+
+```javascript
+const path = require('path');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const {CleanWebpackPlugin} = require('clean-webpack-plugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+
+module.exports = {
+  mode: 'development',
+  entry: {
+    index: './src/index.tsx'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true
+            }
+          }
+        ],
+        exclude: /node_modules/
+      },
+      {
+        test: /\.woff2?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        use: 'url-loader?limit=10000'
+      },
+      {
+        test: /\.(ttf|eot|svg)(\?[\s\S]+)?$/,
+        use: 'file-loader'
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.ttf$/,
+        use: ['file-loader']
+      }
+    ]
+  },
+  plugins: [
+    new CleanWebpackPlugin({cleanStaleWebpackAssets: false}),
+    new HtmlWebpackPlugin({
+      template: 'src/index.html'
+    }),
+    new MonacoWebpackPlugin(),
+    new ForkTsCheckerWebpackPlugin()
+  ],
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js', '.html']
+  },
+  output: {
+    filename: '[name].bundle.js',
+    publicPath: '/'
+  }
+};
+```
+
 ### 主题样式
 
 目前主要支持两个主题：`cxd（云舍）` 和 `angt（仿 Antd）`
@@ -296,6 +370,7 @@ html 中引入：
 ```html
 <link href="./node_modules/amis/lib/themes/cxd.css" />
 <link href="./node_modules/amis/lib/helper.css" />
+<link href="./node_modules/amis/sdk/iconfont.css" />
 <!-- 或 <link href="./node_modules/amis/lib/themes/antd.css" /> -->
 ```
 
@@ -304,6 +379,7 @@ js 中引入：
 ```js
 import './node_modules/amis/lib/themes/cxd.css';
 import './node_modules/amis/lib/helper.css';
+import './node_modules/amis/sdk/iconfont.css';
 // 或 import './node_modules/amis/lib/themes/antd.css';
 ```
 
@@ -624,3 +700,7 @@ class MyComponent extends React.Component<any, any> {
 ##### richTextToken: string
 
 内置 rich-text 为 frolaEditor，想要使用，请自行购买，或者用免费的 Tinymce，不设置 token 默认就是 Tinymce。
+
+##### hideValidateFailedDetail: boolean
+
+Form 表单验证失败时在 notify 消息提示中是否隐藏详细信息，默认展示，设置为 true 时隐藏

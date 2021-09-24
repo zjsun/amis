@@ -1,10 +1,9 @@
 import React from 'react';
-import qs from 'qs';
 import {RendererStore, IRendererStore, IIRendererStore} from './store/index';
 import {getEnv, destroy} from 'mobx-state-tree';
 import {wrapFetcher} from './utils/api';
 import {normalizeLink} from './utils/normalizeLink';
-import {findIndex, promisify, string2regExp} from './utils/helper';
+import {findIndex, promisify, qsparse, string2regExp} from './utils/helper';
 import {Api, fetcherResult, Payload, SchemaNode, Schema, Action} from './types';
 import {observer} from 'mobx-react';
 import Scoped from './Scoped';
@@ -265,9 +264,7 @@ const defaultOptions: RenderOptions = {
   alert,
   confirm,
   notify: (type, msg, conf) =>
-    toast[type]
-      ? toast[type](msg, type === 'error' ? 'Error' : 'Info', conf)
-      : console.warn('[Notify]', type, msg),
+    toast[type] ? toast[type](msg) : console.warn('[Notify]', type, msg),
 
   jumpTo: (to: string, action?: any) => {
     if (to === 'goBack') {
@@ -302,8 +299,8 @@ const defaultOptions: RenderOptions = {
       if (pathname !== location.pathname || !location.search) {
         return false;
       }
-      const query = qs.parse(search.substring(1));
-      const currentQuery = qs.parse(location.search.substring(1));
+      const query = qsparse(search.substring(1));
+      const currentQuery = qsparse(location.search.substring(1));
       return Object.keys(query).every(key => query[key] === currentQuery[key]);
     } else if (pathname === location.pathname) {
       return true;

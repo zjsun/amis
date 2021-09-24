@@ -127,8 +127,8 @@
   --Alert-boxShadow: none;
   --Alert-fontSize: var(--fontSizeBase);
   --Alert-marginBottom: var(--gap-md);
-  --Alert-paddingX: var(--gap-base);
-  --Alert-paddingY: var(--gap-base);
+  --Alert-paddingX: var(--gap-sm);
+  --Alert-paddingY: var(--gap-sm);
 
   --Audio-border: #{px2rem(1px)} solid #dee2e6;
   --Audio-height: #{px2rem(50px)};
@@ -435,9 +435,9 @@
   --Checkbox--sm-size: #{px2rem(16px)};
   --Checkbox-borderRadius: var(--borderRadius);
   --Checkbox-color: var(--Form-input-borderColor);
-  --Checkbox-gap: var(--gap-sm);
+  --Checkbox-gap: var(--gap-xs);
   --Checkbox-gb: #fff;
-  --Checkbox-size: var(--gap-lg);
+  --Checkbox-size: var(--Form-fontSize);
   --Checkbox-inner-size: calc(var(--Checkbox-size) / 2);
   --Checkbox-onHover-color: var(--info);
   --Checkbox-onDisabled-bg: #e5e7eb;
@@ -1194,6 +1194,8 @@
   --Tabs--vertical-onActive-container-bg: var(--Tabs--vertical-bg);
   --Tabs--chrome-onHover-bg: #f6f7f8;
   --Tabs--chrome-bg: #e7eaed;
+  --Tabs--chrome-radius-size: #{px2rem(8px)};
+  --Tabs--chrome-right-boder-color: var(--borderColorDarken);
 
   --TagControl-sugBtn-bg: var(--Button--default-bg);
   --TagControl-sugBtn-border: var(--Button--default-border);
@@ -1238,12 +1240,13 @@
   --Toast-close-color: var(--white);
   --Toast-color: var(--white);
 
+  --Toast-icon-width: #{px2rem(16px)};
   --Toast-icon-height: var(--Toast-icon-width);
-  --Toast-icon-width: #{px2rem(30px)};
+
   --Toast-opacity: 0.8;
   --Toast-paddingL: #{px2rem(40px)};
-  --Toast-paddingX: var(--gap-base);
-  --Toast-paddingY: var(--gap-base);
+  --Toast-paddingX: var(--gap-sm);
+  --Toast-paddingY: var(--gap-xs);
   --Toast-title-display: block;
   --Toast-width: #{px2rem(300px)};
 
