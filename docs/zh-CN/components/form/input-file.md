@@ -12,6 +12,8 @@ order: 21
 
 用来负责文件上传，文件上传成功后会返回文件地址，这个文件地址会作为这个表单项的值，整个表单提交的时候，其实提交的是文件地址，文件上传已经在这个控件中完成了。
 
+> 如果希望文件内容伴随表单一起提交，可以配置 `asBlob` 或者 `asBase64`。
+
 ```schema: scope="body"
 {
     "type": "form",
@@ -28,7 +30,11 @@ order: 21
 }
 ```
 
-### 接口返回格式
+### 接口说明
+
+这是单文件上传模式，通过配置 `receiver` 来接管文件上传。
+
+接口发送方式是 POST, 数据体为 form-data 格式。对应的文件字段名为 `file`。这个可以通过 `fileField` 来配置。要求返回的数据格式如下。
 
 ```json
 {
@@ -41,6 +47,8 @@ order: 21
 ```
 
 - value：必须返回该字段用作回显，一般是文件资源地址
+
+> 注意这只是单文件上传部分，如果允许上传的文件比较大，建议用分块上传，请阅读下面的分块上传部分。
 
 ## 限制文件类型
 
@@ -89,7 +97,92 @@ order: 21
 
 ## 分块上传
 
-如果文件过大，则可能需要使用分块上传
+如果文件过大，则可能需要使用分块上传，默认大于 5M（chunkSize 配置决定） 的文件是会自动开启，可以通过 `useChunk` 配置成 false 关闭。
+
+分块上传需要配置三个接口来完成分别是:
+
+- `startChunkApi` 用来做分块前的准备工作
+- `chunkApi` 用来接收每个分块上传
+- `finishChunkApi` 用来收尾分块上传
+
+还可以通过 `concurrency` 控制并行数量，默认是 3
+
+### startChunkApi
+
+用来做分块前的准备工作，一个文件只会调用一次。如果出错了，后续的分块上传就会中断。
+
+发送说明：默认是 post，发送的数据中会包含 `filename` 字段，记录文件名，默认的数据体格式为 json。可以额外配置参数，请参考 API 的配置说明。
+
+要求返回的数据中必须包含：
+
+- `uploadId` 这次上传的唯一 ID。
+- `key` 有点类似 `uploadId`，可有可无，爱速搭中用来记录后端文件存储路径。
+
+其他属性返回目前是没有任何作用的。
+
+如：
+
+```
+{
+  "status": 0,
+  "msg": "",
+  "data": {
+    "key": "images/JSSDK_page-xxxx.zip",
+    "uploadId": "036f64cd5dd95750d4bcb33556b629c6"
+  }
+}
+```
+
+### chunkApi
+
+用来接收每个分块上传，大文件会根据 chunkSize 分割成多块，然后每块上传都会调用这个接口。
+
+发送说明：默认为 post，发送体格式为 form-data。包含以下信息：
+
+- `uploadId` startChunkApi 返回的
+- `key` startChunkApi 返回的
+- `partNumber` 分块序号，从 1 开始。
+- `partSize` 分块大小
+- `file` 文件体
+
+要求返回的数据中必须包含:
+
+- `eTag` 通常为文件的内容戳。
+
+如：
+
+```
+{
+  "status": 0,
+  "msg": "",
+  "data": {
+    "eTag": "016bd9b68ddd5cd7318875da3ea28207"
+  }
+}
+```
+
+### finishChunkApi
+
+等所有分块上传完后，将上传文件收集到的 `eTag` 信息合并一起，再次请求后端完成文件上传。
+
+发送说明：默认为 post，数据体默认为 json，包含以下信息
+
+- `filename` 文件名
+- `key` startChunkApi 返回的
+- `uploadId` startChunkApi 返回的
+- `partList` 数组，每个成员为 `{partNumber: xxx, eTag: "xxxxx"}` 即分块编号和分块 `eTag` 信息。
+
+数据返回，类似单文件上传一样，必须有 `value` 属性，可选返回 `url` 用来决定文件的下载地址。如：
+
+```
+{
+  "status": 0,
+  "msg": "",
+  "data": {
+    "value": "https://xxxx.cdn.bcebos.com/images/JSSDK_page-xxxxx.zip"
+  }
+}
+```
 
 ## 自动填充
 
@@ -168,6 +261,27 @@ order: 21
 }
 ```
 
+## 拖拽上传
+
+把文件拖入指定区域，完成上传，同样支持点击上传。
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "body": [
+        {
+            "type": "input-file",
+            "name": "file",
+            "label": "File",
+            "accept": "*",
+            "receiver": "/api/upload/file",
+            "drag": true
+        }
+    ]
+}
+```
+
 ## 属性表
 
 除了支持 [普通表单项属性表](./formitem#%E5%B1%9E%E6%80%A7%E8%A1%A8) 中的配置以外，还支持下面一些配置
@@ -181,6 +295,7 @@ order: 21
 | maxSize          | `number`                       |                                                                                                            | 默认没有限制，当设置后，文件大小大于此值将不允许上传。单位为`B`                                                                      |
 | maxLength        | `number`                       |                                                                                                            | 默认没有限制，当设置后，一次只允许上传指定数量文件。                                                                                 |
 | multiple         | `boolean`                      | `false`                                                                                                    | 是否多选。                                                                                                                           |
+| drag             | `boolean`                      | `false`                                                                                                    | 是否为拖拽上传                                                                                                                       |
 | joinValues       | `boolean`                      | `true`                                                                                                     | [拼接值](./options#%E6%8B%BC%E6%8E%A5%E5%80%BC-joinvalues)                                                                           |
 | extractValue     | `boolean`                      | `false`                                                                                                    | [提取值](./options#%E6%8F%90%E5%8F%96%E5%A4%9A%E9%80%89%E5%80%BC-extractvalue)                                                       |
 | delimiter        | `string`                       | `,`                                                                                                        | [拼接符](./options#%E6%8B%BC%E6%8E%A5%E7%AC%A6-delimiter)                                                                            |
@@ -198,3 +313,34 @@ order: 21
 | startChunkApi    | [API](../../../docs/types/api) |                                                                                                            | startChunkApi                                                                                                                        |
 | chunkApi         | [API](../../../docs/types/api) |                                                                                                            | chunkApi                                                                                                                             |
 | finishChunkApi   | [API](../../../docs/types/api) |                                                                                                            | finishChunkApi                                                                                                                       |
+| concurrency      | `number`                       |                                                                                                            | 分块上传时并行个数                                                                                                                   |
+| documentation    | `string`                       |                                                                                                            | 文档内容                                                                                                                             |
+| documentLink     | `string`                       |                                                                                                            | 文档链接                                                                                                                             |
+
+## 事件表
+
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`event.data.xxx`事件参数变量来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
+
+| 事件名称 | 事件参数                                                                                                   | 说明                                     |
+| -------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| change   | `event.data.file: Array<FileValue>` 上传的文件                                                             | 上传文件值变化时触发(上传失败同样会触发) |
+| remove   | `event.data.file: FileValue` 被移除的文件                                                                  | 移除文件时触发                           |
+| success  | `event.data.file: FileValue` 远程上传请求成功后返回的结果数据                                              | 上传成功时触发                           |
+| fail     | `event.data.file: FileValue` 上传的文件 <br /> `event.data.error: object` 远程上传请求失败后返回的错误信息 | 上传文件失败时触发                       |
+
+### FileValue 属性表
+
+| 属性名 | 类型     | 说明                                               |
+| ------ | -------- | -------------------------------------------------- |
+| name   | `string` | 文件名称                                           |
+| value  | `string` | 上传成功后返回的 url                               |
+| state  | `string` | 文件当前状态,值可为 `pending` `uploaded` `invalid` |
+| error  | `string` | 错误信息                                           |
+
+## 动作表
+
+当前组件对外暴露以下特性动作，其他组件可以通过指定`actionType: 动作名称`、`componentId: 该组件id`来触发这些动作，详细请查看[事件动作](../../docs/concepts/event-action#触发其他组件的动作)。
+
+| 动作名称 | 动作配置 | 说明 |
+| -------- | -------- | ---- |
+| clear    | -        | 清空 |

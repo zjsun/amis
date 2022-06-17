@@ -12,7 +12,7 @@ order: 99
 
 ## 基本用法
 
-类型定义为 `app`，通过 pages 定义页面，支持层级，支持内嵌 schema，或者 通过 schemaApi 远程拉取页面，完整用法请参考 [amis-admin](https://github.com/aisuda/amis-admin) 项目
+类型定义为 `app`，通过 pages 定义页面，支持层级，支持内嵌 schema，或者 通过 schemaApi 远程拉取页面，完整用法请参考 [amis-admin](https://github.com/aisuda/amis-admin) 项目里的代码示例，需要修改 `env`：
 
 ```json
 {
@@ -21,7 +21,6 @@ order: 99
   "pages": [
     {
       "label": "分组1",
-
       "children": [
         {
           "label": "父页面",
@@ -63,7 +62,7 @@ order: 99
   - `label` 菜单名称。
   - `icon` 菜单图标，比如：fa fa-file.
   - `url` 页面路由路径，当路由命中该路径时，启用当前页面。当路径不是 `/` 打头时，会连接父级路径。比如：父级的路径为 `folder`，而此时配置 `pageA`, 那么当页面地址为 `/folder/pageA` 时才会命中此页面。当路径是 `/` 开头如： `/crud/list` 时，则不会拼接父级路径。另外还支持 `/crud/view/:id` 这类带参数的路由，页面中可以通过 `${params.id}` 取到此值。
-  - `schema` 页面的配置，具体配置请前往 [Page 页面说明](./page.md)
+  - `schema` 页面的配置，具体配置请前往 [Page 页面说明](./page)
   - `schemaApi` 如果想通过接口拉取，请配置。返回路径为 `json>data`。schema 和 schemaApi 只能二选一。
   - `link` 如果想配置个外部链接菜单，只需要配置 link 即可。
   - `redirect` 跳转，当命中当前页面时，跳转到目标页面。
@@ -71,3 +70,10 @@ order: 99
   - `isDefaultPage` 当你需要自定义 404 页面的时候有用，不要出现多个这样的页面，因为只有第一个才会有用。
   - `visible` 有些页面可能不想出现在菜单中，可以配置成 `false`，另外带参数的路由无需配置，直接就是不可见的。
   - `className` 菜单类名。
+
+## 动作表
+
+| 动作名称 | 动作配置                   | 说明             |
+| -------- | -------------------------- | ---------------- |
+| reload   | -                          | 刷新（重新加载） |
+| setValue | `value: object` 更新的数据 | 更新数据         |

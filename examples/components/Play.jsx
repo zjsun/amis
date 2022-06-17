@@ -1,12 +1,15 @@
 import React from 'react';
-import {toast} from '../../src/components/Toast';
-import {render, makeTranslator} from '../../src/index';
-import {normalizeLink} from '../../src/utils/normalizeLink';
-import {alert, confirm} from '../../src/components/Alert';
+import {toast, render, makeTranslator} from 'amis';
+import {normalizeLink} from 'amis-core';
+import {isMobile} from 'amis-core';
+import {attachmentAdpator} from 'amis-core';
+import {alert, confirm} from 'amis-ui';
 import axios from 'axios';
 import JSON5 from 'json5';
-import CodeEditor from '../../src/components/Editor';
+import {Editor as CodeEditor} from 'amis-ui';
 import copy from 'copy-to-clipboard';
+import {matchPath} from 'react-router-dom';
+import {Drawer} from 'amis-ui';
 
 const DEFAULT_CONTENT = `{
     "$schema": "/schemas/page.json#",
@@ -33,7 +36,7 @@ const scopes = {
             "autoFocus": false,
             "api": "/api/mock/saveForm?waitSeconds=1",
             "mode": "horizontal",
-            "controls": SCHEMA_PLACEHOLDER,
+            "body": SCHEMA_PLACEHOLDER,
             "submitText": null,
             "actions": []
         }
@@ -60,7 +63,7 @@ const scopes = {
             "type": "form",
             "mode": "horizontal",
             "autoFocus": false,
-            "controls": [
+            "body": [
                 SCHEMA_PLACEHOLDER
             ],
             "submitText": null,
@@ -98,13 +101,14 @@ export default class PlayGround extends React.Component {
   constructor(props) {
     super(props);
     this.iframeRef = React.createRef();
-    const {router} = props;
+    const {history} = props;
 
     const schema = this.buildSchema(props.code || DEFAULT_CONTENT, props);
     this.state = {
       asideWidth: props.asideWidth || Math.max(300, window.innerWidth * 0.3),
       schema: schema,
-      schemaCode: JSON.stringify(schema, null, 2)
+      schemaCode: JSON.stringify(schema, null, 2),
+      isOpened: false
     };
 
     this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -112,6 +116,8 @@ export default class PlayGround extends React.Component {
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.removeWindowEvents = this.removeWindowEvents.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.toggleDrawer = this.toggleDrawer.bind(this);
+    this.close = this.close.bind(this);
     this.schemaProps = {};
 
     const __ = makeTranslator(props.locale);
@@ -119,11 +125,17 @@ export default class PlayGround extends React.Component {
     this.env = {
       session: 'doc',
       updateLocation: (location, replace) => {
-        router[replace ? 'replace' : 'push'](normalizeLink(location));
+        history[replace ? 'replace' : 'push'](normalizeLink(location));
       },
       isCurrentUrl: to => {
+        if (!to) {
+          return false;
+        }
         const link = normalizeLink(to);
-        return router.isActive(link);
+        return !!matchPath(history.location.pathname, {
+          path: link,
+          exact: true
+        });
       },
       jumpTo: (to, action) => {
         to = normalizeLink(to);
@@ -141,35 +153,60 @@ export default class PlayGround extends React.Component {
         if (/^https?:\/\//.test(to)) {
           window.location.replace(to);
         } else {
-          router.push(to);
+          history.push(to);
         }
       },
-      fetcher: async config => {
-        config = {
-          dataType: 'json',
-          ...config
-        };
+      fetcher: async api => {
+        let {url, method, data, responseType, config, headers} = api;
+        config = config || {};
+        config.url = url;
+        config.withCredentials = true;
+        responseType && (config.responseType = responseType);
 
-        if (config.dataType === 'json' && config.data) {
-          config.data = JSON.stringify(config.data);
-          config.headers = config.headers || {};
+        if (config.cancelExecutor) {
+          config.cancelToken = new axios.CancelToken(config.cancelExecutor);
+        }
+
+        config.headers = headers || {};
+        config.method = method;
+        config.data = data;
+
+        if (method === 'get' && data) {
+          config.params = data;
+        } else if (data && data instanceof FormData) {
+          // config.headers['Content-Type'] = 'multipart/form-data';
+        } else if (
+          data &&
+          typeof data !== 'string' &&
+          !(data instanceof Blob) &&
+          !(data instanceof ArrayBuffer)
+        ) {
+          data = JSON.stringify(data);
           config.headers['Content-Type'] = 'application/json';
         }
 
         // 支持返回各种报错信息
-        config.validateStatus = function (status) {
+        config.validateStatus = function () {
           return true;
         };
 
-        const response = await axios[config.method](
-          config.url,
-          config.data,
-          config
-        );
+        let response = await axios(config);
+        response = await attachmentAdpator(response, __);
 
         if (response.status >= 400) {
           if (response.data) {
-            if (response.data.msg) {
+            // 主要用于 raw: 模式下，后端自己校验登录，
+            if (
+              response.status === 401 &&
+              response.data.location &&
+              response.data.location.startsWith('http')
+            ) {
+              location.href = response.data.location.replace(
+                '{{redirect}}',
+                encodeURIComponent(location.href)
+              );
+              return new Promise(() => {});
+            } else if (response.data.msg) {
               throw new Error(response.data.msg);
             } else {
               throw new Error(
@@ -183,16 +220,25 @@ export default class PlayGround extends React.Component {
             );
           }
         }
+
         return response;
       },
       isCancel: value => axios.isCancel(value),
-      notify: (type, msg) =>
-        toast[type] ? toast[type](msg) : console.warn('[Notify]', type, msg),
+      notify: (type, msg, conf) =>
+        toast[type]
+          ? toast[type](msg, conf)
+          : console.warn('[Notify]', type, msg),
       alert,
       confirm,
-      copy: content => {
-        copy(content);
+      copy: (content, options) => {
+        copy(content, options);
         toast.success(__('System.copy'));
+      },
+      tracker(eventTrack) {
+        console.debug('eventTrack', eventTrack);
+      },
+      replaceText: {
+        AMIS_HOST: 'https://baidu.gitee.io/amis'
       }
     };
 
@@ -219,14 +265,11 @@ export default class PlayGround extends React.Component {
     }
   }
 
-  componentWillReceiveProps(nextprops) {
+  componentDidUpdate(preProps) {
     const props = this.props;
 
-    if (props.code !== nextprops.code) {
-      const schema = this.buildSchema(
-        nextprops.code || DEFAULT_CONTENT,
-        nextprops
-      );
+    if (preProps.code !== props.code) {
+      const schema = this.buildSchema(props.code || DEFAULT_CONTENT, props);
       this.setState({
         schema: schema,
         schemaCode: JSON.stringify(schema, null, 2)
@@ -247,7 +290,7 @@ export default class PlayGround extends React.Component {
     const query = props.location.query;
 
     try {
-      const scope = query.scope || props.scope;
+      const scope = props.scope;
 
       if (scope && scopes[scope]) {
         schemaContent = scopes[scope].replace(
@@ -292,7 +335,7 @@ export default class PlayGround extends React.Component {
       affixFooter: false
     };
 
-    if (this.props.viewMode === 'mobile') {
+    if (this.props.viewMode === 'mobile' && !isMobile()) {
       return (
         <iframe
           width="375"
@@ -357,6 +400,18 @@ export default class PlayGround extends React.Component {
     window.removeEventListener('mousemove', this.handleMouseMove);
   }
 
+  toggleDrawer() {
+    this.setState({
+      isOpened: !this.state.isOpened
+    });
+  }
+
+  close() {
+    this.setState({
+      isOpened: false
+    });
+  }
+
   editorDidMount = (editor, monaco) => {
     this.editor = editor;
     this.monaco = monaco;
@@ -411,6 +466,9 @@ export default class PlayGround extends React.Component {
       <CodeEditor
         value={this.state.schemaCode}
         onChange={this.handleChange}
+        options={{
+          lineNumbers: 'off'
+        }}
         // editorFactory={this.editorFactory}
         editorDidMount={this.editorDidMount}
         language="json"
@@ -420,8 +478,36 @@ export default class PlayGround extends React.Component {
   }
 
   render() {
-    const {vertical, height} = this.props;
-    if (vertical) {
+    const {vertical, mini, height, theme, classPrefix} = this.props;
+    if (mini) {
+      return (
+        <div className="Playgroud Playgroud--mini">
+          <a onClick={this.toggleDrawer} className="Playgroud-edit-btn">
+            编辑代码 <i className="fa fa-code p-l-xs"></i>
+          </a>
+          <Drawer
+            showCloseButton
+            closeOnOutside
+            resizable
+            theme={theme}
+            overlay={false}
+            position="right"
+            show={this.state.isOpened}
+            onHide={this.close}
+          >
+            <div className={`${classPrefix}Drawer-header`}>
+              编辑代码（支持编辑实时预览）
+            </div>
+            <div className={`${classPrefix}Drawer-body no-padder`}>
+              {this.renderEditor()}
+            </div>
+          </Drawer>
+          <div style={{minHeight: height}} className="Playgroud-preview">
+            {this.renderPreview()}
+          </div>
+        </div>
+      );
+    } else if (vertical) {
       return (
         <div className="Playgroud">
           <div style={{minHeight: height}} className="Playgroud-preview">

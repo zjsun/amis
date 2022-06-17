@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "outDir": "output/",
+    "outDir": "lib",
+    "rootDir": "./",
     "module": "commonjs",
     "target": "es5",
-    "lib": ["es6", "dom", "ES2015"],
-    "sourceMap": true,
+    "lib": ["ES6", "DOM", "ES2015", "ES2021"],
     "jsx": "react",
     "moduleResolution": "node",
-    "rootDir": "",
     "importHelpers": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -18,10 +17,11 @@
     "strictNullChecks": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "typeRoots": ["./node_modules/@types", "./types"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    //
+    "composite": true
   },
-  "include": ["src/**/*", "examples/**/*"],
-  "exclude": ["node_modules", "acceptance-tests", "webpack", "jest"],
-  "types": ["node", "typePatches"]
+  "types": ["typePatches"],
+  "references": [{"path": "packages/amis"}],
+  "include": ["**.ts", "**.tsx", "packages/amis-ui/src/custom.d.ts"]
 }

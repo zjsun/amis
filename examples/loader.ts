@@ -5,7 +5,6 @@
   const mapping: {
     [propName: string]: any;
   } = {
-    'jquery': __moduleId('jquery'),
     'react': __moduleId('react'),
     'react-dom': __moduleId('react-dom'),
     'immutability-helper': __moduleId('immutability-helper'),
@@ -22,12 +21,11 @@
     'echarts': __moduleId('echarts'),
     'zrender': __moduleId('zrender'),
     'sortablejs': __moduleId('sortablejs'),
-    'amis': __moduleId('../src'),
-    'amis@@version': __moduleId('../src'),
+    'amis': __moduleId('amis'),
+    'amis@@version': __moduleId('amis'),
     'amis/embed': __moduleId('./embed.tsx'),
     'amis@@version/embed': __moduleId('./embed.tsx'),
     'prop-types': __moduleId('prop-types'),
-    'async/mapLimit': __moduleId('async/mapLimit'),
     'qs': __moduleId('qs'),
     'path-to-regexp': __moduleId('path-to-regexp'),
     'history': __moduleId('history')

@@ -55,6 +55,41 @@ order: 14
 ]
 ```
 
+可以配合 `input-table` 来实现上传后二次编辑
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "body": [
+        {
+          "type": "input-excel",
+          "name": "excel",
+          "label": "上传 Excel"
+        },
+        {
+          "type": "input-table",
+          "name": "excel",
+          "visibleOn": "data.excel",
+          "columns": [
+            {
+              "name": "名称",
+              "label": "名称",
+              "type": "input-text"
+            },
+            {
+              "name": "网址",
+              "label": "网址",
+              "type": "input-text"
+            }
+          ]
+        }
+    ]
+}
+```
+
+需要保证 `input-table` 的 `name` 和 `input-excel` 一致，同时 `columns` 中的 `name` 也需要和 Excel 的列名一致。
+
 ## 二维数组模式
 
 除了默认配置的对象数组格式，还可以使用二维数组方式，方法是设置 `"parseMode": "array"`
@@ -124,3 +159,85 @@ order: 14
   }
 ]
 ```
+
+## 富文本模式
+
+默认情况下 Excel 内容将会解析为纯文本，如果要使用富文本格式，可以通过 `plainText` 属性控制
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "debug": true,
+    "body": [
+        {
+            "type": "input-excel",
+            "name": "excel",
+            "plainText": false,
+            "label": "上传 Excel"
+        }
+    ]
+}
+```
+
+开启这个模式后，对于富文本的内容会解析成对象的形式，有以下几种
+
+- 富文本，内容放在 richText 属性下
+
+  ```
+  {
+    "richText": [
+      {text: 'This is '},
+      {font: {italic: true}, text: 'italic'}
+    ]
+  }
+  ```
+
+- 出错
+
+  ```
+  { error: '#N/A' }
+  ```
+
+- 公式
+
+  ```
+  { formula: 'A1+A2', result: 7 };
+  ```
+
+- 超链接
+
+  ```
+  {
+    text: 'www.mylink.com',
+    hyperlink: 'http://www.mylink.com',
+    tooltip: 'www.mylink.com'
+  }
+  ```
+
+## 属性表
+
+| 属性名       | 类型                    | 默认值   | 说明               |
+| ------------ | ----------------------- | -------- | ------------------ |
+| allSheets    | `boolean`               | false    | 是否解析所有 sheet |
+| parseMode    | `'array'` 或 `'object'` | 'object' | 解析模式           |
+| includeEmpty | `boolean`               | true     | 是否包含空值       |
+| plainText    | `boolean`               | true     | 是否解析为纯文本   |
+
+## 事件表
+
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`event.data.xxx`事件参数变量来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
+
+| 事件名称 | 事件参数                                             | 说明                     |
+| -------- | ---------------------------------------------------- | ------------------------ |
+| change   | `event.data.value: Array<object>` excel 解析后的数据 | excel 上传解析完成后触发 |
+
+## 动作表
+
+当前组件对外暴露以下特性动作，其他组件可以通过指定`actionType: 动作名称`、`componentId: 该组件id`来触发这些动作，动作配置可以通过`args: {动作配置项名称: xxx}`来配置具体的参数，详细请查看[事件动作](../../docs/concepts/event-action#触发其他组件的动作)。
+
+| 动作名称 | 动作配置                                       | 说明                                                   |
+| -------- | ---------------------------------------------- | ------------------------------------------------------ |
+| clear    | -                                              | 清空                                                   |
+| reset    | -                                              | 将值重置为`resetValue`，若没有配置`resetValue`，则清空 |
+| setValue | `value: Array<object>` 更新的 excel 解析后数据 | 更新数据                                               |

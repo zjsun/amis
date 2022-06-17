@@ -28,7 +28,11 @@ order: 47
 
 ## 图片上传
 
-通过设置 `receiver` 来支持文件上传，它的返回值类似如下：
+通过设置 `receiver` 来支持文件上传，如果是 tinymce，它会将图片放在 `file` 字段中
+
+> 1.6.1 及以上版本可以通过 fileField 字段修改
+
+它的返回值类似如下：
 
 ```json
 {
@@ -55,7 +59,7 @@ order: 47
     "body": [
         {
             "type": "input-rich-text",
-            "receiver": "/api/mock2/sample/mirror?json={%22value%22:%22/amis/static/logo_c812f54.png%22}",
+            "receiver": "/api/mock2/sample/mirror?json={%22link%22:%22/amis/static/logo_c812f54.png%22}",
             "name": "rich",
             "label": "Rich Text"
         }
@@ -92,6 +96,50 @@ order: 47
 }
 ```
 
+## 关于 tinymce 粘贴 word 的问题
+
+因为 amis 中使用的是开源版本 tinymce，没有商业版本功能，导致比如从 Word 中粘贴表格会看不到边框，解决方法是自己
+
+```json
+{
+    "type": "input-rich-text",
+    "name": "rich",
+    "options": {
+        "content_css": "/xxx.css"
+    }
+}
+```
+
+比如下面的示例
+
+```css
+.mce-item-table th {
+	font-weight: bold;
+}
+.mce-item-table th, .mce-item-table td {
+    padding: 6px 13px;
+	border: 1px solid #ddd;
+}
+.mce-item-table tr {
+	border-top: 1px solid #ccc;
+}
+```
+
+但最终页面渲染的时候，这个 class 没有了，得改成 table
+
+```css
+table th {
+	font-weight: bold;
+}
+table th, table td {
+    padding: 6px 13px;
+	border: 1px solid #ddd;
+}
+table tr {
+	border-top: 1px solid #ccc;
+}
+```
+
 ## 使用 froala 编辑器
 
 只需要加一行 `"vendor": "froala"` 配置就行，froala 是付费产品，需要设置 [richTextToken](../../start/getting-started#richtexttoken-string) 才能去掉水印。
@@ -117,25 +165,22 @@ froala 可以通过设置 buttons 参数来控制显示哪些按钮，默认是�
 
 ```json
 [
+  "undo",
+  "redo",
   "paragraphFormat",
-  "quote",
-  "color",
-  "|",
+  "textColor",
+  "backgroundColor",
   "bold",
-  "italic",
   "underline",
   "strikeThrough",
-  "|",
   "formatOL",
   "formatUL",
   "align",
-  "|",
+  "quote",
   "insertLink",
   "insertImage",
+  "insertEmotion",
   "insertTable",
-  "|",
-  "undo",
-  "redo",
   "html"
 ]
 ```
@@ -149,6 +194,7 @@ froala 可以通过设置 buttons 参数来控制显示哪些按钮，默认是�
 | saveAsUbb     | `boolean`                      |        | 是否保存为 ubb 格式                                                                                                                                     |
 | receiver      | [API](../../../docs/types/api) |        | 默认的图片保存 API                                                                                                                                      |
 | videoReceiver | [API](../../../docs/types/api) |        | 默认的视频保存 API                                                                                                                                      |
+| fileField     | string                         |        | 上传文件时的字段名                                                                                                                                      |
 | size          | `string`                       |        | 框的大小，可设置为 `md` 或者 `lg`                                                                                                                       |
 | options       | `object`                       |        | 需要参考 [tinymce](https://www.tiny.cloud/docs/configure/integration-and-setup/) 或 [froala](https://www.froala.com/wysiwyg-editor/docs/options) 的文档 |
 | buttons       | `Array<string>`                |        | froala 专用，配置显示的按钮，tinymce 可以通过前面的 options 设置 [toolbar](https://www.tiny.cloud/docs/demo/custom-toolbar-button/) 字符串              |

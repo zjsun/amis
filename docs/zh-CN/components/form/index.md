@@ -170,6 +170,81 @@ order: 24
 }
 ```
 
+#### 两端对齐
+
+有时表单内容需要两端对齐，可在 horizontal 中增加 justify 配置，注意只对内联控件生效
+
+```schema: scope="body"
+{
+  "type": "container",
+  "style": {
+    "width": "300px",
+  },
+  "body": [
+    {
+      "type": "form",
+      "title": "两端对齐",
+      "mode": "horizontal",
+      "horizontal": {
+        "justify": true,
+        "left": 3,
+        "right": 9
+      },
+      "body": [
+        {
+          "type": "input-text",
+          "name": "name",
+          "label": "姓名",
+          "required": true
+        },
+        {
+          "type": "input-text",
+          "name": "name",
+          "label": "班级",
+          "required": true
+        },
+        {
+          "type": "switch",
+          "name": "status",
+          "inputClassName": "is-inline",
+          "label": "是否在职",
+          "onText": "在职",
+          "offText": "非在职"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### label 对齐模式
+
+水平模式下 `labelAlign` 可以设置标签文本的对齐方式，支持`right`和`left`，默认为`right`。该属性的优先级：表单项 > 表单。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "title": "label对齐模式",
+  "mode": "horizontal",
+  "labelAlign": "left",
+  "body": [
+    {
+      "type": "input-email",
+      "name": "email",
+      "label": "邮箱",
+      "labelAlign": "right",
+      "required": true
+    },
+    {
+      "type": "input-password",
+      "name": "password",
+      "label": "密码",
+      "required": true
+    }
+  ]
+}
+```
+
 ### 内联模式
 
 使用内联模式展现表单项
@@ -202,9 +277,89 @@ order: 24
   }
 ```
 
+### 自定义 label 宽度
+
+水平模式下 `labelWidth` 可以设置标签文本的自定义宽度，默认单位为`px`。该属性的优先级：表单项 > 表单。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "title": "label对齐模式",
+  "mode": "horizontal",
+  "labelWidth": 120,
+  "body": [
+    {
+      "type": "input-email",
+      "name": "email",
+      "label": "邮箱",
+      "labelWidth": 200,
+      "required": true
+    },
+    {
+      "type": "input-password",
+      "name": "password",
+      "label": "密码",
+      "required": true
+    },
+    {
+      "type": "input-text",
+      "name": "address",
+      "label": "地址",
+      "mode": "inline"
+    },
+    {
+      "type": "input-text",
+      "name": "mailCode",
+      "label": "邮编",
+      "mode": "inline",
+      "labelWidth": 80
+    },
+    {
+      "type": "radios",
+      "name": "mailCode",
+      "label": "性别",
+      "mode": "row",
+      "options": [
+        {
+          "label": "Male",
+          "value": "male"
+        },
+        {
+          "label": "Female",
+          "value": "female"
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### 实现一行展示多个表单项
 
-使用 group 实现一行显示多个表单项
+有两种方法，一个是通过 `columnCount` 来控制表单显示几列
+
+```schema: scope="body"
+ {
+    "type": "form",
+    "title": "内联模式",
+    "columnCount": 2,
+    "body": [
+      {
+        "type": "input-email",
+        "name": "email",
+        "label": "邮箱",
+        "required": true
+      },
+      {
+        "type": "input-password",
+        "name": "password",
+        "label": "密码"
+      }
+    ]
+  }
+```
+
+另一个方法是使用 group，它能实现每行显示不同列数，以及不同列的宽度分配情况，可以实现更灵活的控制
 
 ```schema: scope="body"
  [
@@ -216,14 +371,39 @@ order: 24
           "type": "group",
           "body": [
             {
-              "type": "input-email",
-              "name": "email",
-              "label": "邮箱"
+              "type": "input-text",
+              "name": "text1",
+              "label": "文本1"
             },
             {
-              "type": "input-password",
-              "name": "password",
-              "label": "密码"
+              "type": "input-text",
+              "name": "text2",
+              "label": "文本2"
+            }
+          ]
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "type": "group",
+          "body": [
+            {
+              "type": "input-text",
+              "name": "text3",
+              "label": "文本3",
+              "columnRatio": 4
+            },
+            {
+              "type": "input-text",
+              "name": "text4",
+              "label": "文本4",
+              "columnRatio": 6
+            },
+            {
+              "type": "input-text",
+              "name": "text5",
+              "label": "文本5"
             }
           ]
         }
@@ -500,6 +680,31 @@ Form 支持轮询初始化接口，步骤如下：
   }
 ```
 
+注意这里的 `data` 会进行数据映射，如果想不映射，需要进行转义，比如下面的例子
+
+```schema: scope="body"
+{
+    "type": "form",
+    "data": {
+      "name": "\\${rick}",
+      "email": "rick@gmail.com"
+    },
+    "title": "用户信息",
+    "body": [
+      {
+        "type": "input-text",
+        "name": "name",
+        "label": "姓名"
+      },
+      {
+        "type": "input-email",
+        "name": "email",
+        "label": "邮箱"
+      }
+    ]
+  }
+```
+
 ### 数据格式一致性问题
 
 当表单来初始化表单项值时，需要保持数据格式的一致性。
@@ -698,6 +903,38 @@ Form 支持轮询初始化接口，步骤如下：
 
 > `rule` 编写使用 [表达式](../../../docs/concepts/expression)
 
+### 组合校验高亮表单项
+
+> 1.6.5 及以上版本
+
+默认组合校验的错误信息显示在表单的底部，如果希望可以定位到表单项自己，则可以通过配置 `name` 来高亮错误。
+
+```schema:scope="body"
+{
+  "type": "form",
+  "api": "/api/form/saveForm",
+  "rules": [
+    {
+      "rule": "!(data.a && data.b)",
+      "message": "a 和 b 不能同时有值",
+      "name": ["a", "b"]
+    }
+  ],
+  "body": [
+    {
+      "type": "input-text",
+      "name": "a",
+      "label": "A"
+    },
+    {
+      "type": "input-text",
+      "name": "b",
+      "label": "B"
+    }
+  ]
+}
+```
+
 ## 重置表单
 
 配置`"type": "reset"`或者`"actionType": "reset"`的按钮，可以实现点击重置表单项值。
@@ -858,6 +1095,66 @@ Form 支持轮询初始化接口，步骤如下：
 
 上面示例是一种[组件间联动](../../docs/concepts/linkage#%E7%BB%84%E4%BB%B6%E9%97%B4%E8%81%94%E5%8A%A8)
 
+### 显示提交的返回结果
+
+默认情况下表单提交返回结果会写入当前表单的数据域，如果要显示在当前表单，可以直接使用 `static` 类型，比如下面的例子
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "/api/mock2/form/saveForm",
+  "title": "用户信息",
+  "body": [
+    {
+      "type": "input-text",
+      "name": "name",
+      "label": "姓名"
+    },
+    {
+      "type": "static",
+      "name": "id",
+      "visibleOn": "typeof data.id !== 'undefined'",
+      "label": "返回 ID"
+    }
+  ]
+}
+```
+
+### 将提交返回内容发送到其它组件
+
+还可以将返回结果发送到其它组件，首先设置另一个表单的 `name`，然后通过 `reload` 配置参数来提交
+
+```schema: scope="body"
+[
+  {
+    "type": "form",
+    "api": "/api/mock2/form/saveForm",
+    "title": "用户信息",
+    "reload": "otherForm?id=${id}",
+    "body": [
+      {
+        "type": "input-text",
+        "name": "name",
+        "label": "姓名"
+      }
+    ]
+  },
+  {
+    "type": "form",
+    "name": "otherForm",
+    "title": "返回结果",
+    "actions": [],
+    "body": [
+      {
+        "type": "static",
+        "name": "id",
+        "label": "返回 ID"
+      }
+    ]
+  }
+]
+```
+
 ### 将数据域发送给目标组件
 
 配置`target`属性为目标组件`name`值，可以在触发提交行为后，将当前表单的数据域发送给目标组件。
@@ -950,6 +1247,8 @@ Form 支持轮询初始化接口，步骤如下：
 | name                        | `string`                                                                  |                                                                        | 设置一个名字后，方便其他组件与其通信                                                                                                                                                                                                                                                                                                                         |
 | mode                        | `string`                                                                  | `normal`                                                               | 表单展示方式，可以是：`normal`、`horizontal` 或者 `inline`                                                                                                                                                                                                                                                                                                   |
 | horizontal                  | `Object`                                                                  | `{"left":"col-sm-2", "right":"col-sm-10", "offset":"col-sm-offset-2"}` | 当 mode 为 `horizontal` 时有用，用来控制 label                                                                                                                                                                                                                                                                                                               |
+| labelAlign                  | `"right" \| "left"`                                                       | `"right"`                                                              | 表单项标签对齐方式，默认右对齐，仅在 `mode`为`horizontal` 时生效                                                                                                                                                                                                                                                                                             |
+| labelWidth                  | `number \| string`                                                        |                                                                        | 表单项标签自定义宽度                                                                                                                                                                                                                                                                                                                                         |
 | title                       | `string`                                                                  | `"表单"`                                                               | Form 的标题                                                                                                                                                                                                                                                                                                                                                  |
 | submitText                  | `String`                                                                  | `"提交"`                                                               | 默认的提交按钮名称，如果设置成空，则可以把默认按钮去掉。                                                                                                                                                                                                                                                                                                     |
 | className                   | `string`                                                                  |                                                                        | 外层 Dom 的类名                                                                                                                                                                                                                                                                                                                                              |
@@ -964,7 +1263,7 @@ Form 支持轮询初始化接口，步骤如下：
 | panelClassName              | `string`                                                                  |                                                                        | 外层 panel 的类名                                                                                                                                                                                                                                                                                                                                            |
 | api                         | [API](../../../docs/types/api)                                            |                                                                        | Form 用来保存数据的 api。                                                                                                                                                                                                                                                                                                                                    |
 | initApi                     | [API](../../../docs/types/api)                                            |                                                                        | Form 用来获取初始数据的 api。                                                                                                                                                                                                                                                                                                                                |
-| rules                       | Array<{rule:string;message:string}>                                       |                                                                        | 表单组合校验规则                                                                                                                                                                                                                                                                                                                                             |
+| rules                       | Array<{rule:string;message:string;name?: string[]}>                       |                                                                        | 表单组合校验规则                                                                                                                                                                                                                                                                                                                                             |
 | interval                    | `number`                                                                  | `3000`                                                                 | 刷新时间(最低 3000)                                                                                                                                                                                                                                                                                                                                          |
 | silentPolling               | `boolean`                                                                 | `false`                                                                | 配置刷新时是否显示加载动画                                                                                                                                                                                                                                                                                                                                   |
 | stopAutoRefreshWhen         | `string`                                                                  | `""`                                                                   | 通过[表达式](./Types.md#表达式) 来配置停止刷新的条件                                                                                                                                                                                                                                                                                                         |
@@ -990,3 +1289,33 @@ Form 支持轮询初始化接口，步骤如下：
 | preventEnterSubmit          | `boolean`                                                                 | `false`                                                                | 禁用回车提交表单                                                                                                                                                                                                                                                                                                                                             |
 | trimValues                  | `boolean`                                                                 | `false`                                                                | trim 当前表单项的每一个值                                                                                                                                                                                                                                                                                                                                    |
 | promptPageLeave             | `boolean`                                                                 | `false`                                                                | form 还没保存，即将离开页面前是否弹框确认。                                                                                                                                                                                                                                                                                                                  |
+| columnCount                 | `number`                                                                  | 0                                                                      | 表单项显示为几列                                                                                                                                                                                                                                                                                                                                             |
+| inheritData                 | `booelan`                                                                 | `true`                                                                 | 默认表单是采用数据链的形式创建个自己的数据域，表单提交的时候只会发送自己这个数据域的数据，如果希望共用上层数据域可以设置这个属性为 false，这样上层数据域的数据不需要在表单中用隐藏域或者显式映射才能发送了。                                                                                                                                                 |
+
+## 事件表
+
+当前组件会对外派发以下事件，可以通过`onEvent`来监听这些事件，并通过`actions`来配置执行的动作，在`actions`中可以通过`event.data.xxx`事件参数变量来获取事件产生的数据，详细请查看[事件动作](../../docs/concepts/event-action)。
+
+| 事件名称              | 事件参数                                                     | 说明                         |
+| --------------------- | ------------------------------------------------------------ | ---------------------------- |
+| inited                | `event.data: object` initApi 远程请求返回的初始化数据        | 远程初始化接口请求成功时触发 |
+| change                | `event.data: object` 当前表单数据                            | 表单值变化时触发             |
+| formItemValidateSucc  | `event.data: object` 当前表单数据                            | 表单项校验成功时触发         |
+| formItemValidateError | `event.data: object` 当前表单数据                            | 表单项校验失败时触发         |
+| validateSucc          | `event.data: object` 当前表单数据                            | 表单校验成功时触发           |
+| validateError         | `event.data: object` 当前表单数据                            | 表单校验成功时触发           |
+| submitSucc            | `event.data.result: object` api 远程请求成功后返回的结果数据 | 提交成功时触发               |
+| submitFail            | `event.data.error: object` api 远程请求失败后返回的错误信息  | 提交失败时触发               |
+
+## 动作表
+
+当前组件对外暴露以下特性动作，其他组件可以通过指定`actionType: 动作名称`、`componentId: 该组件id`来触发这些动作，动作配置可以通过`args: {动作配置项名称: xxx}`来配置具体的参数，详细请查看[事件动作](../../docs/concepts/event-action#触发其他组件的动作)。
+
+| 动作名称 | 动作配置                       | 说明                       |
+| -------- | ------------------------------ | -------------------------- |
+| submit   | -                              | 提交表单                   |
+| reset    | -                              | 重置表单                   |
+| clear    | -                              | 清空表单                   |
+| validate | -                              | 校验表单                   |
+| reload   | -                              | 刷新（重新加载）           |
+| setValue | `value: object` 更新的表单数据 | 更新数据，对数据进行 merge |

@@ -24,7 +24,7 @@ function mockRequest(event, context) {
     method: 'GET',
     body: body,
     url: `/api/${event.pathParameters.subpath}`,
-    originalUrl: '',
+    originalUrl: ''
   };
 }
 
@@ -34,16 +34,27 @@ function mockResponse(event, context, callback) {
       callback(null, {
         statusCode: 200,
         headers: createHeaders(event.headers),
-        body: JSON.stringify(json),
+        body: JSON.stringify(json)
       });
     },
+    send(res) {
+      callback(null, {
+        statusCode: 200,
+        headers: {
+          ...createHeaders(event.headers),
+          'Content-Type': 'text/javascript'
+        },
+        json: false,
+        body: res
+      });
+    }
   };
 }
 
 function createHeaders(headers) {
   let referer = '';
 
-  if (/^(https?\:\/\/[^:\/]+(?:\:\d+)?\/)/i.test(headers['Referer'])) {
+  if (/^(https?\:\/\/[^:\/]+(?:\:\d+)?\/)/i.test(headers['referer'])) {
     referer = RegExp.$1.replace(/\/$/, '');
   }
 
@@ -52,6 +63,6 @@ function createHeaders(headers) {
     'Access-Control-Allow-Headers': 'x-requested-with,content-type',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS,HEAD',
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Origin': referer ? `${referer}` : '*',
+    'Access-Control-Allow-Origin': referer ? `${referer}` : '*'
   };
 }
